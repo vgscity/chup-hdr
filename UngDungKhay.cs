@@ -13,6 +13,7 @@ sealed class UngDungKhay : ApplicationContext
     readonly NotifyIcon khay;
     readonly CuaSoHotkey cuaSo;
     KhungChon? khungDangMo;
+    HookBanPhim? hook;
     ToolStripMenuItem mucTuLuu = null!, mucTuChay = null!, mucSuaSnip = null!;
 
     public UngDungKhay()
@@ -46,7 +47,14 @@ sealed class UngDungKhay : ApplicationContext
                 : "App khác (Lightshot, ShareX, Greenshot…) đang giữ phím PrtScn. Tắt app đó rồi mở lại VGS Chụp HDR.";
             khay.ShowBalloonTip(8000, "Chưa bắt được phím PrtScn", loi, ToolTipIcon.Warning);
         }
-        if (!okToan || !okCuaSo) NhatKy.Ghi($"Hotkey phụ: Shift+PrtScn={okToan}, Alt+PrtScn={okCuaSo}");
+        if (!okToan || !okCuaSo)
+        {
+            // App khác (vd. phần mềm card đồ hoạ) đang giữ tổ hợp phím phụ → bắt bằng hook bàn phím thay thế
+            hook = new HookBanPhim(mod =>
+                mod == Win32.MOD_SHIFT && !okToan ? HK_TOAN :
+                mod == Win32.MOD_ALT && !okCuaSo ? HK_CUA_SO : null, XuLyHotkey);
+            NhatKy.Ghi($"Hotkey phụ: Shift+PrtScn={okToan}, Alt+PrtScn={okCuaSo} · hook bàn phím dự phòng={hook.DaCai}");
+        }
     }
 
     void XuLyHotkey(int id)
@@ -114,10 +122,13 @@ sealed class UngDungKhay : ApplicationContext
     // ───── menu ─────
     ContextMenuStrip TaoMenu()
     {
-        var m = new ContextMenuStrip();
-        m.Items.Add("Chụp chọn vùng\tPrtScn", null, (_, _) => MoKhungChon());
-        m.Items.Add("Chụp toàn màn hình\tShift+PrtScn", null, (_, _) => XuLyHotkey(HK_TOAN));
-        m.Items.Add("Chụp cửa sổ đang mở\tAlt+PrtScn", null, (_, _) => XuLyHotkey(HK_CUA_SO));
+        var m = new ContextMenuStrip { Renderer = new VeMenuToi(), ShowImageMargin = true };
+        m.Items.Add(new DauMenu(HopGioiThieu.Hien));
+        m.Items.Add(new ToolStripSeparator());
+        // "\t" không tạo cột phím tắt trong ContextMenuStrip (chữ bị dính "Chụp chọn vùngPrtScn") → dùng ShortcutKeyDisplayString
+        m.Items.Add(new ToolStripMenuItem("Chụp chọn vùng", null, (_, _) => MoKhungChon()) { ShortcutKeyDisplayString = "PrtScn", Font = new Font(m.Font, FontStyle.Bold) });
+        m.Items.Add(new ToolStripMenuItem("Chụp toàn màn hình", null, (_, _) => XuLyHotkey(HK_TOAN)) { ShortcutKeyDisplayString = "Shift+PrtScn" });
+        m.Items.Add(new ToolStripMenuItem("Chụp cửa sổ đang mở", null, (_, _) => XuLyHotkey(HK_CUA_SO)) { ShortcutKeyDisplayString = "Alt+PrtScn" });
         m.Items.Add(new ToolStripSeparator());
         m.Items.Add("Mở thư mục ảnh", null, (_, _) => MoThuMuc());
         m.Items.Add("Đổi thư mục lưu…", null, (_, _) => DoiThuMuc());
@@ -134,6 +145,9 @@ sealed class UngDungKhay : ApplicationContext
         m.Items.Add(mucSuaSnip);
         m.Items.Add("Thông tin màn hình HDR…", null, (_, _) => HienThongTinManHinh());
         m.Items.Add("Xem nhật ký lỗi", null, (_, _) => { NhatKy.Ghi("Mở nhật ký"); Process.Start(new ProcessStartInfo(NhatKy.DuongDan) { UseShellExecute = true }); });
+        m.Items.Add(new ToolStripSeparator());
+        m.Items.Add("Giới thiệu…", null, (_, _) => HopGioiThieu.Hien());
+        m.Items.Add(new ToolStripMenuItem("Thêm tiện ích VGS tại vgs.zone", null, (_, _) => GiaoDien.MoTrangVgs()) { ForeColor = GiaoDien.Hong });
         m.Items.Add(new ToolStripSeparator());
         m.Items.Add("Thoát", null, (_, _) => Thoat());
         m.Opening += (_, _) => mucSuaSnip.Visible = SnipDangGiuPrtScn();
@@ -249,6 +263,7 @@ sealed class UngDungKhay : ApplicationContext
     {
         khay.Visible = false;
         for (int id = 1; id <= 3; id++) Win32.UnregisterHotKey(cuaSo.Handle, id);
+        hook?.Dispose();
         cuaSo.DestroyHandle();
         ExitThread();
     }
