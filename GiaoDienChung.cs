@@ -34,6 +34,13 @@ static class Ve
     }
 
     [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int giaTri, int size);
+    /// Bo góc cửa sổ/popup kiểu Windows 11 (DWMWA_WINDOW_CORNER_PREFERENCE = DWMWCP_ROUND); Windows 10 bỏ qua
+    public static void BoGocWin11(IntPtr h)
+    {
+        int tron = 2;
+        try { DwmSetWindowAttribute(h, 33, ref tron, sizeof(int)); } catch { }
+    }
+
     /// Thanh tiêu đề tối (Windows 10 20H1+ / 11)
     public static void ThanhTieuDeToi(Form f)
     {

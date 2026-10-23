@@ -104,9 +104,9 @@ sealed class UngDungKhay : ApplicationContext
 
     void CapNhatNhanPhim()
     {
-        mucChon.ShortcutKeyDisplayString = CaiDat.TenPhim(CaiDat.HienTai.PhimChon);
-        mucToan.ShortcutKeyDisplayString = CaiDat.TenPhim(CaiDat.HienTai.PhimToan);
-        mucCuaSo.ShortcutKeyDisplayString = CaiDat.TenPhim(CaiDat.HienTai.PhimCuaSo);
+        VeMenuToi.DatPhim(mucChon, CaiDat.HienTai.PhimChon);
+        VeMenuToi.DatPhim(mucToan, CaiDat.HienTai.PhimToan);
+        VeMenuToi.DatPhim(mucCuaSo, CaiDat.HienTai.PhimCuaSo);
         var chu = Chu.GoiYKhay(CaiDat.TenPhim(CaiDat.HienTai.PhimChon));
         khay.Text = chu.Length > 63 ? chu[..63] : chu;   // NotifyIcon.Text tối đa 63 ký tự
     }
@@ -180,35 +180,40 @@ sealed class UngDungKhay : ApplicationContext
         m.Items.Add(new DauMenu(() => MoCuaSoChinh()));
         m.Items.Add(new ToolStripSeparator());
         // "\t" không tạo cột phím tắt trong ContextMenuStrip (chữ bị dính "Chụp chọn vùngPrtScn") → dùng ShortcutKeyDisplayString
-        mucChon = new ToolStripMenuItem(Chu.ChupChonVung, null, (_, _) => XuLyHotkey(HK_CHON)) { Font = new Font(m.Font, FontStyle.Bold) };
-        mucToan = new ToolStripMenuItem(Chu.ChupToanMan, null, (_, _) => XuLyHotkey(HK_TOAN));
-        mucCuaSo = new ToolStripMenuItem(Chu.ChupCuaSo, null, (_, _) => XuLyHotkey(HK_CUA_SO));
+        // Biểu tượng (Segoe Fluent/MDL2) cùng bộ với thanh bên cửa sổ chính; phím tắt vẽ dạng keycap, bật/tắt là công tắc
+        mucChon = VeMenuToi.Gan(new ToolStripMenuItem(Chu.ChupChonVung, null, (_, _) => XuLyHotkey(HK_CHON)) { Font = new Font("Segoe UI Semibold", m.Font.Size) }, "", CaiDat.HienTai.PhimChon);
+        mucToan = VeMenuToi.Gan(new ToolStripMenuItem(Chu.ChupToanMan, null, (_, _) => XuLyHotkey(HK_TOAN)), "", CaiDat.HienTai.PhimToan);
+        mucCuaSo = VeMenuToi.Gan(new ToolStripMenuItem(Chu.ChupCuaSo, null, (_, _) => XuLyHotkey(HK_CUA_SO)), "", CaiDat.HienTai.PhimCuaSo);
         m.Items.AddRange(new ToolStripItem[] { mucChon, mucToan, mucCuaSo });
         m.Items.Add(new ToolStripSeparator());
-        m.Items.Add(new ToolStripMenuItem(Chu.MoCaiDat, null, (_, _) => MoCuaSoChinh()) { ShortcutKeyDisplayString = Chu.NhapDupIcon });
-        m.Items.Add(Chu.MoThuMucAnh, null, (_, _) => MoThuMuc());
-        m.Items.Add(Chu.DoiThuMucLuu, null, (_, _) => DoiThuMuc());
+        m.Items.Add(VeMenuToi.Gan(new ToolStripMenuItem(Chu.MoCaiDat, null, (_, _) => MoCuaSoChinh()) { ShortcutKeyDisplayString = Chu.NhapDupIcon }, ""));
+        m.Items.Add(VeMenuToi.Gan(new ToolStripMenuItem(Chu.MoThuMucAnh, null, (_, _) => MoThuMuc()), ""));
+        m.Items.Add(VeMenuToi.Gan(new ToolStripMenuItem(Chu.DoiThuMucLuu, null, (_, _) => DoiThuMuc()), ""));
         // Dựng lại menu khi đổi ngôn ngữ: giữ trạng thái tự chạy đang có (bản Store hỏi StartupTask bất đồng bộ)
         bool tuChayCu = mucTuChay != null ? mucTuChay.Checked : !GoiStore.DangTrongGoi && DangTuChay();
-        mucTuLuu = new ToolStripMenuItem(Chu.TuLuuKhiChep) { Checked = CaiDat.HienTai.TuLuuKhiChep, CheckOnClick = true };
+        mucTuLuu = VeMenuToi.Gan(new ToolStripMenuItem(Chu.TuLuuKhiChep) { Checked = CaiDat.HienTai.TuLuuKhiChep, CheckOnClick = true }, "", congTac: true);
         mucTuLuu.CheckedChanged += (_, _) => { CaiDat.HienTai.TuLuuKhiChep = mucTuLuu.Checked; CaiDat.HienTai.Luu(); CaiDatDoi?.Invoke(); };
         m.Items.Add(mucTuLuu);
-        mucTuChay = new ToolStripMenuItem(Chu.TuChayKhiDangNhap) { Checked = tuChayCu, CheckOnClick = true };
+        mucTuChay = VeMenuToi.Gan(new ToolStripMenuItem(Chu.TuChayKhiDangNhap) { Checked = tuChayCu, CheckOnClick = true }, "", congTac: true);
         mucTuChay.CheckedChanged += (_, _) => { if (!dangDatTuChay) _ = DatTuChayAsync(mucTuChay.Checked); CaiDatDoi?.Invoke(); };
         m.Items.Add(mucTuChay);
         if (GoiStore.DangTrongGoi && !daHoiTuChay) { daHoiTuChay = true; _ = CapNhatTuChayTuGoiAsync(); }
         m.Items.Add(new ToolStripSeparator());
-        mucSuaSnip = new ToolStripMenuItem(GoiStore.DangTrongGoi ? Chu.TraPhimSettings : Chu.TraPhimTatSnip);
+        mucSuaSnip = VeMenuToi.Gan(new ToolStripMenuItem(GoiStore.DangTrongGoi ? Chu.TraPhimSettings : Chu.TraPhimTatSnip), "");
         mucSuaSnip.Click += (_, _) => TraPhimPrtScn();
         m.Items.Add(mucSuaSnip);
-        m.Items.Add(Chu.ThongTinManHdr, null, (_, _) => HienThongTinManHinh());
-        m.Items.Add(Chu.XemNhatKy, null, (_, _) => XemNhatKy());
+        m.Items.Add(VeMenuToi.Gan(new ToolStripMenuItem(Chu.ThongTinManHdr, null, (_, _) => HienThongTinManHinh()), ""));
+        m.Items.Add(VeMenuToi.Gan(new ToolStripMenuItem(Chu.XemNhatKy, null, (_, _) => XemNhatKy()), ""));
         m.Items.Add(new ToolStripSeparator());
-        m.Items.Add(Chu.GioiThieuMenu, null, (_, _) => MoCuaSoChinh(CuaSoChinh.Trang.GioiThieu));
-        m.Items.Add(new ToolStripMenuItem(Chu.ThemTienIch, null, (_, _) => GiaoDien.MoTrangVgs()) { ForeColor = GiaoDien.Hong });
+        m.Items.Add(VeMenuToi.Gan(new ToolStripMenuItem(Chu.GioiThieuMenu, null, (_, _) => MoCuaSoChinh(CuaSoChinh.Trang.GioiThieu)), ""));
+        m.Items.Add(VeMenuToi.Gan(new ToolStripMenuItem(Chu.ThemTienIch, null, (_, _) => GiaoDien.MoTrangVgs()) { ForeColor = GiaoDien.Hong }, ""));
         m.Items.Add(new ToolStripSeparator());
-        m.Items.Add(Chu.Thoat, null, (_, _) => Thoat());
+        m.Items.Add(VeMenuToi.Gan(new ToolStripMenuItem(Chu.Thoat, null, (_, _) => Thoat()), ""));
+        // mục cao hơn, thoáng như mục thanh bên
+        foreach (ToolStripItem it in m.Items)
+            if (it is ToolStripMenuItem and not DauMenu) it.Padding = new Padding(0, 5, 0, 5);
         m.Opening += (_, _) => mucSuaSnip.Visible = SnipDangGiuPrtScn();
+        m.Opened += (_, _) => Ve.BoGocWin11(m.Handle);
         return m;
     }
 
