@@ -8,6 +8,7 @@ public sealed class CaiDat
     public string ThuMuc { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Screenshots");
     public bool MoFileSauKhiLuu { get; set; } = false;
+    public string NgonNgu { get; set; } = VgsChupHdr.NgonNgu.TuDong;   // "auto" | "vi" | "en"
 
     // Phím tắt (Keys của WinForms: mã phím | Shift/Control/Alt), đổi được trong cửa sổ chính
     public const Keys MacDinhChon = Keys.PrintScreen;
@@ -20,7 +21,7 @@ public sealed class CaiDat
     /// "Ctrl+Shift+A", "PrtScn"…
     public static string TenPhim(Keys k)
     {
-        if (k == Keys.None) return "(chưa đặt)";
+        if (k == Keys.None) return Chu.ChuaDatPhim;
         var phan = new List<string>();
         if (k.HasFlag(Keys.Control)) phan.Add("Ctrl");
         if (k.HasFlag(Keys.Shift)) phan.Add("Shift");

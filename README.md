@@ -31,6 +31,8 @@ Build chéo trên macOS cần `EnableWindowsTargeting=true` (đã có trong cspr
 - `KhungChon.cs` – lớp phủ chọn vùng + thanh công cụ vẽ (`HinhVe.cs`)
 - `UngDungKhay.cs` – tray, hotkey, menu, tự chạy
 - `XuatAnh.cs` / `CaiDat.cs` / `NhatKy.cs` – lưu, clipboard, cài đặt, nhật ký lỗi
+- `CuaSoChinh.cs` – cửa sổ chính (nhấp đúp icon khay): chụp ngay, đổi phím tắt, thư mục lưu, tự chạy, ngôn ngữ
+- `Chu.cs` – toàn bộ chữ giao diện, tiếng Việt + tiếng Anh (tự theo ngôn ngữ Windows)
 
 Nhật ký lỗi: `%AppData%\VgsChupHdr\nhat-ky.txt`. Cài đặt: `%AppData%\VgsChupHdr\cai-dat.json`.
 

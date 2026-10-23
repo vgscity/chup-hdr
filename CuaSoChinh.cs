@@ -14,17 +14,17 @@ sealed class CuaSoChinh : Form
     readonly ToolTip goiY = new();
     bool dangNapLai;
 
-    static readonly (string ten, string moTa)[] thongTinPhim =
+    readonly (string ten, string moTa)[] thongTinPhim =
     {
-        ("Chụp chọn vùng", "Màn hình đứng lại, kéo chọn, vẽ chú thích"),
-        ("Chụp toàn màn hình", "Chép thẳng vào clipboard + lưu file"),
-        ("Chụp cửa sổ đang mở", "Chỉ cửa sổ bạn đang làm việc"),
+        (Chu.ChupChonVung, Chu.MoTaChonVung),
+        (Chu.ChupToanMan, Chu.MoTaToanMan),
+        (Chu.ChupCuaSo, Chu.MoTaCuaSo),
     };
 
     public CuaSoChinh(UngDungKhay app)
     {
         this.app = app;
-        Text = "VGScreenshotHDR";
+        Text = Chu.TenApp;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
@@ -47,8 +47,8 @@ sealed class CuaSoChinh : Form
         var dai = new HopGioiThieu.DaiGradient { Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty, Padding = new Padding(Px(24), Px(20), Px(24), Px(20)), MinimumSize = new Size(rong, 0), WrapContents = false };
         dai.Controls.Add(new PictureBox { Image = GiaoDien.Logo(), SizeMode = PictureBoxSizeMode.Zoom, Size = new Size(Px(52), Px(52)), Margin = new Padding(0, 0, Px(16), 0), BackColor = Color.Transparent });
         var cotTen = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, BackColor = Color.Transparent, Margin = Padding.Empty, WrapContents = false };
-        cotTen.Controls.Add(Nhan("VGScreenshotHDR", new Font("Segoe UI Semibold", 16f), Color.White));
-        cotTen.Controls.Add(Nhan($"Chụp màn hình HDR đúng màu, không cháy sáng · v{GiaoDien.PhienBan}", new Font("Segoe UI", 9.5f), Color.FromArgb(240, 240, 240)));
+        cotTen.Controls.Add(Nhan(Chu.TenApp, new Font("Segoe UI Semibold", 16f), Color.White));
+        cotTen.Controls.Add(Nhan($"{Chu.MoTaNgan} · v{GiaoDien.PhienBan}", new Font("Segoe UI", 9.5f), Color.FromArgb(240, 240, 240)));
         dai.Controls.Add(cotTen);
         khung.Controls.Add(dai);
 
@@ -56,10 +56,10 @@ sealed class CuaSoChinh : Form
         khung.Controls.Add(than);
 
         // ── chụp ngay
-        than.Controls.Add(TieuDe("Chụp ngay"));
+        than.Controls.Add(TieuDe(Chu.ChupNgay));
         var hangChup = new TableLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, ColumnCount = 3, Margin = Padding.Empty, MinimumSize = new Size(rongTrong, 0) };
         for (int i = 0; i < 3; i++) hangChup.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
-        string[] tenNut = { "Chọn vùng", "Toàn màn hình", "Cửa sổ đang mở" };
+        string[] tenNut = { Chu.NutChonVung, Chu.NutToanMan, Chu.NutCuaSo };
         for (int i = 0; i < 3; i++)
         {
             int id = UngDungKhay.CacHotkey[i];
@@ -72,8 +72,8 @@ sealed class CuaSoChinh : Form
         than.Controls.Add(hangChup);
 
         // ── phím tắt
-        than.Controls.Add(TieuDe("Phím tắt"));
-        than.Controls.Add(Nhan("Bấm vào ô rồi nhấn tổ hợp phím mới. Esc để huỷ, Delete để bỏ trống.", new Font("Segoe UI", 9f), GiaoDien.ChuMo, rongTrong, new Padding(0, 0, 0, Px(6))));
+        than.Controls.Add(TieuDe(Chu.PhimTat));
+        than.Controls.Add(Nhan(Chu.HuongDanGhiPhim, new Font("Segoe UI", 9f), GiaoDien.ChuMo, rongTrong, new Padding(0, 0, 0, Px(6))));
         var bangPhim = new TableLayoutPanel { AutoSize = true, ColumnCount = 3, Margin = Padding.Empty, MinimumSize = new Size(rongTrong, 0) };
         bangPhim.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         bangPhim.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -96,7 +96,7 @@ sealed class CuaSoChinh : Form
             hangPhim[id] = (o, tt);
         }
         than.Controls.Add(bangPhim);
-        var nutMacDinh = Nut("Khôi phục phím mặc định", false);
+        var nutMacDinh = Nut(Chu.KhoiPhucPhim, false);
         nutMacDinh.Margin = new Padding(0, Px(6), 0, 0);
         nutMacDinh.Click += (_, _) =>
         {
@@ -110,7 +110,7 @@ sealed class CuaSoChinh : Form
         than.Controls.Add(nutMacDinh);
 
         // ── lưu ảnh
-        than.Controls.Add(TieuDe("Lưu ảnh"));
+        than.Controls.Add(TieuDe(Chu.LuuAnh));
         var hangThuMuc = new TableLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, ColumnCount = 3, Margin = Padding.Empty, MinimumSize = new Size(rongTrong, 0) };
         hangThuMuc.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         hangThuMuc.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -118,24 +118,40 @@ sealed class CuaSoChinh : Form
         nhanThuMuc = Nhan("", Font, GiaoDien.Chu, rongTrong - Px(200));
         nhanThuMuc.AutoEllipsis = true;
         nhanThuMuc.Anchor = AnchorStyles.Left;
-        var nutDoi = Nut("Đổi…", false);
+        var nutDoi = Nut(Chu.Doi, false);
         nutDoi.Click += (_, _) => app.DoiThuMuc(this);
-        var nutMo = Nut("Mở thư mục", false);
+        var nutMo = Nut(Chu.MoThuMuc, false);
         nutMo.Margin = new Padding(Px(8), 0, 0, 0);
         nutMo.Click += (_, _) => app.MoThuMuc();
         hangThuMuc.Controls.Add(nhanThuMuc, 0, 0);
         hangThuMuc.Controls.Add(nutDoi, 1, 0);
         hangThuMuc.Controls.Add(nutMo, 2, 0);
         than.Controls.Add(hangThuMuc);
-        hopTuLuu = Hop("Tự lưu file mỗi khi chép ảnh vào clipboard");
+        hopTuLuu = Hop(Chu.TuLuuMoiLanChep);
         hopTuLuu.CheckedChanged += (_, _) => { if (!dangNapLai) app.TuLuu = hopTuLuu.Checked; };
         than.Controls.Add(hopTuLuu);
 
         // ── khởi động
-        than.Controls.Add(TieuDe("Khởi động"));
-        hopTuChay = Hop("Tự chạy VGScreenshotHDR khi đăng nhập Windows");
+        than.Controls.Add(TieuDe(Chu.KhoiDong));
+        hopTuChay = Hop(Chu.TuChayCungWindows);
         hopTuChay.CheckedChanged += (_, _) => { if (!dangNapLai) app.TuChay = hopTuChay.Checked; };
         than.Controls.Add(hopTuChay);
+
+        // ── ngôn ngữ (tên tiếng Việt / English giữ nguyên, để ai cũng nhận ra ngôn ngữ của mình)
+        than.Controls.Add(TieuDe(Chu.NgonNguTieuDe));
+        // 3 nút liền nhau thay ComboBox (ComboBox ra nền trắng, lệch giao diện tối)
+        var hangNgonNgu = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = Padding.Empty };
+        foreach (var (ma, ten) in new[] { (NgonNgu.TuDong, Chu.NgonNguTuDong), (NgonNgu.TiengViet, "Tiếng Việt"), (NgonNgu.TiengAnh, "English") })
+        {
+            bool dangChon = CaiDat.HienTai.NgonNgu == ma;
+            var b = Nut(ten, dangChon);
+            b.MinimumSize = new Size(Px(100), Px(36));
+            b.Margin = new Padding(0, 0, Px(6), 0);
+            // Đổi ngôn ngữ thì app dựng lại cửa sổ này → đổi sau khi xử lý xong cú bấm
+            if (!dangChon) b.Click += (_, _) => BeginInvoke(() => NgonNgu.Dat(ma));
+            hangNgonNgu.Controls.Add(b);
+        }
+        than.Controls.Add(hangNgonNgu);
 
         // ── chân: vgs.zone
         var chan = new TableLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, ColumnCount = 3, Margin = new Padding(0, Px(22), 0, 0), MinimumSize = new Size(rongTrong, 0) };
@@ -145,14 +161,14 @@ sealed class CuaSoChinh : Form
         var lienKet = new LinkLabel
         {
             AutoSize = true, UseMnemonic = false, Anchor = AnchorStyles.Left,
-            Text = "Thêm tiện ích miễn phí tại vgs.zone",
+            Text = Chu.ThemTienIchTai,
             ForeColor = GiaoDien.ChuMo, LinkColor = GiaoDien.Hong, ActiveLinkColor = Color.White, VisitedLinkColor = GiaoDien.Hong,
         };
         lienKet.LinkArea = new LinkArea(lienKet.Text.IndexOf("vgs.zone", StringComparison.Ordinal), "vgs.zone".Length);
         lienKet.LinkClicked += (_, _) => GiaoDien.MoTrangVgs();
-        var nutGioiThieu = Nut("Giới thiệu", false);
+        var nutGioiThieu = Nut(Chu.GioiThieu, false);
         nutGioiThieu.Click += (_, _) => HopGioiThieu.Hien();
-        var nutVgs = Nut("Mở vgs.zone", true);
+        var nutVgs = Nut(Chu.MoVgs, true);
         nutVgs.Margin = new Padding(Px(8), 0, 0, 0);
         nutVgs.Click += (_, _) => GiaoDien.MoTrangVgs();
         chan.Controls.Add(lienKet, 0, 0);
@@ -177,10 +193,10 @@ sealed class CuaSoChinh : Form
             o.Phim = UngDungKhay.PhimCua(id);
             (tt.Text, tt.ForeColor) = app.TrangThai.GetValueOrDefault(id) switch
             {
-                UngDungKhay.TrangThaiPhim.DangKy => ("✓ Đang hoạt động", Color.FromArgb(52, 199, 89)),
-                UngDungKhay.TrangThaiPhim.HookDuPhong => ("✓ Hoạt động (bắt dự phòng)", Color.FromArgb(52, 199, 89)),
-                UngDungKhay.TrangThaiPhim.ChuaDat => ("Chưa đặt phím", GiaoDien.ChuMo),
-                _ => ("✗ App khác đang giữ", Color.FromArgb(255, 149, 0)),
+                UngDungKhay.TrangThaiPhim.DangKy => (Chu.PhimDangChay, Color.FromArgb(52, 199, 89)),
+                UngDungKhay.TrangThaiPhim.HookDuPhong => (Chu.PhimDuPhong, Color.FromArgb(52, 199, 89)),
+                UngDungKhay.TrangThaiPhim.ChuaDat => (Chu.PhimChuaDat, GiaoDien.ChuMo),
+                _ => (Chu.PhimBiGiu, Color.FromArgb(255, 149, 0)),
             };
         }
         nhanThuMuc.Text = CaiDat.HienTai.ThuMuc;
@@ -340,7 +356,7 @@ sealed class O_Phim : Control
         var r = new Rectangle(0, 0, Width - 1, Height - 1);
         using (var nen = new SolidBrush(dangGhi ? Color.FromArgb(58, 42, 82) : Color.FromArgb(45, 45, 45))) g.FillRectangle(nen, r);
         using (var vien = new Pen(dangGhi || Focused ? GiaoDien.Hong : GiaoDien.Vien, dangGhi ? 2 : 1)) g.DrawRectangle(vien, r);
-        string chu = dangGhi ? "Nhấn phím…" : CaiDat.TenPhim(phim);
+        string chu = dangGhi ? Chu.NhanPhim : CaiDat.TenPhim(phim);
         TextRenderer.DrawText(g, chu, Font, r, dangGhi ? GiaoDien.Hong : GiaoDien.Chu,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
     }

@@ -73,19 +73,19 @@ sealed class KhungChon : Form
     // ───── thanh công cụ ─────
     void TaoThanhCongCu()
     {
-        ThemNut(CongCu.But, "", "Bút vẽ tự do");
-        ThemNut(CongCu.Duong, "", "Đường thẳng");
-        ThemNut(CongCu.MuiTen, "", "Mũi tên");
-        ThemNut(CongCu.Khung, "", "Khung chữ nhật");
-        ThemNut(CongCu.DanhDau, "", "Bút đánh dấu");
-        ThemNut(CongCu.Chu, "", "Chữ (bấm vào ảnh để gõ)");
-        nutMau = ThemNutHanhDong("", "Màu vẽ", (_, _) => menuMau.Show(nutMau, new Point(0, nutMau.Height)));
+        ThemNut(CongCu.But, "", VgsChupHdr.Chu.ButVe);
+        ThemNut(CongCu.Duong, "", VgsChupHdr.Chu.DuongThang);
+        ThemNut(CongCu.MuiTen, "", VgsChupHdr.Chu.MuiTen);
+        ThemNut(CongCu.Khung, "", VgsChupHdr.Chu.KhungChuNhat);
+        ThemNut(CongCu.DanhDau, "", VgsChupHdr.Chu.ButDanhDau);
+        ThemNut(CongCu.Chu, "", VgsChupHdr.Chu.ChuGo);
+        nutMau = ThemNutHanhDong("", VgsChupHdr.Chu.MauVe, (_, _) => menuMau.Show(nutMau, new Point(0, nutMau.Height)));
         nutMau.ForeColor = mau;
-        ThemNutHanhDong("", "Hoàn tác (Ctrl+Z)", (_, _) => HoanTac());
+        ThemNutHanhDong("", VgsChupHdr.Chu.HoanTac, (_, _) => HoanTac());
         ThemKhoang();
-        ThemNutHanhDong("", "Chép vào clipboard (Enter / Ctrl+C)", (_, _) => Chep());
-        ThemNutHanhDong("", "Lưu file… (Ctrl+S)", (_, _) => LuuHoiDuongDan());
-        ThemNutHanhDong("", "Đóng (Esc)", (_, _) => Close());
+        ThemNutHanhDong("", VgsChupHdr.Chu.ChepClipboard, (_, _) => Chep());
+        ThemNutHanhDong("", VgsChupHdr.Chu.LuuFile, (_, _) => LuuHoiDuongDan());
+        ThemNutHanhDong("", VgsChupHdr.Chu.DongEsc, (_, _) => Close());
     }
 
     Button TaoNut(string kyHieu, string goiYChu)
@@ -131,13 +131,7 @@ sealed class KhungChon : Form
 
     void TaoMenuMau()
     {
-        var bang = new (string ten, Color mau)[]
-        {
-            ("Đỏ", Color.FromArgb(255, 59, 48)), ("Cam", Color.FromArgb(255, 149, 0)), ("Vàng", Color.FromArgb(255, 204, 0)),
-            ("Xanh lá", Color.FromArgb(52, 199, 89)), ("Xanh dương", Color.FromArgb(0, 122, 255)), ("Tím", Color.FromArgb(175, 82, 222)),
-            ("Hồng", Color.FromArgb(236, 72, 153)), ("Trắng", Color.White), ("Đen", Color.Black),
-        };
-        foreach (var (ten, m) in bang)
+        foreach (var (ten, m) in VgsChupHdr.Chu.BangMau)
         {
             var o = new Bitmap(16, 16);
             using (var g = Graphics.FromImage(o)) { g.Clear(m); g.DrawRectangle(Pens.Gray, 0, 0, 15, 15); }
@@ -146,7 +140,7 @@ sealed class KhungChon : Form
             menuMau.Items.Add(muc);
         }
         menuMau.Items.Add(new ToolStripSeparator());
-        var khac = new ToolStripMenuItem("Màu khác…");
+        var khac = new ToolStripMenuItem(VgsChupHdr.Chu.MauKhac);
         khac.Click += (_, _) => { using var cd = new ColorDialog { Color = mau, FullOpen = true }; if (cd.ShowDialog(this) == DialogResult.OK) DatMau(cd.Color); };
         menuMau.Items.Add(khac);
     }
@@ -207,7 +201,7 @@ sealed class KhungChon : Form
             using var p = new Pen(Color.FromArgb(180, 255, 255, 255), 1f);
             g.DrawLine(p, diemChuot.X, 0, diemChuot.X, ClientSize.Height);
             g.DrawLine(p, 0, diemChuot.Y, ClientSize.Width, diemChuot.Y);
-            VeNhan(g, "Kéo chuột để chọn vùng  ·  Ctrl+A cả màn hình  ·  Esc thoát",
+            VeNhan(g, VgsChupHdr.Chu.HuongDanKeo,
                 new Point(diemChuot.X + 16, diemChuot.Y + 16), null);
         }
     }
@@ -433,11 +427,11 @@ sealed class KhungChon : Form
         {
             using var a = TaoAnhKetQua();
             XuatAnh.Chep(a);
-            string loi = "Đã chép vào clipboard";
-            if (CaiDat.HienTai.TuLuuKhiChep) loi += " · lưu " + Path.GetFileName(XuatAnh.Luu(a));
+            string loi = VgsChupHdr.Chu.DaChep;
+            if (CaiDat.HienTai.TuLuuKhiChep) loi += VgsChupHdr.Chu.VaLuu(Path.GetFileName(XuatAnh.Luu(a)));
             thongBao?.Invoke(loi);
         }
-        catch (Exception e) { NhatKy.Ghi("Chép ảnh lỗi", e); thongBao?.Invoke("Lỗi khi chép: " + e.Message); }
+        catch (Exception e) { NhatKy.Ghi("Chép ảnh lỗi", e); thongBao?.Invoke(VgsChupHdr.Chu.LoiChep(e.Message)); }
         Close();
     }
 
@@ -447,19 +441,19 @@ sealed class KhungChon : Form
         if (vung == null) return;
         using var hop = new SaveFileDialog
         {
-            Filter = "Ảnh PNG|*.png|Ảnh JPG|*.jpg",
+            Filter = VgsChupHdr.Chu.LocFile,
             FileName = XuatAnh.TenFileMoi(),
             InitialDirectory = CaiDat.HienTai.ThuMuc,
-            Title = "Lưu ảnh chụp",
+            Title = VgsChupHdr.Chu.LuuAnhChup,
         };
         if (hop.ShowDialog(this) != DialogResult.OK) return;
         try
         {
             using var a = TaoAnhKetQua();
             XuatAnh.LuuTheoDuongDan(a, hop.FileName);
-            thongBao?.Invoke("Đã lưu " + Path.GetFileName(hop.FileName));
+            thongBao?.Invoke(VgsChupHdr.Chu.DaLuu(Path.GetFileName(hop.FileName)));
         }
-        catch (Exception e) { NhatKy.Ghi("Lưu ảnh lỗi", e); thongBao?.Invoke("Lỗi khi lưu: " + e.Message); }
+        catch (Exception e) { NhatKy.Ghi("Lưu ảnh lỗi", e); thongBao?.Invoke(VgsChupHdr.Chu.LoiLuu(e.Message)); }
         Close();
     }
 

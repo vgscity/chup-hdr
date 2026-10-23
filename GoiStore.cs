@@ -45,9 +45,9 @@ static class GoiStore
             return s switch
             {
                 Windows.ApplicationModel.StartupTaskState.Enabled or Windows.ApplicationModel.StartupTaskState.EnabledByPolicy => (true, null),
-                Windows.ApplicationModel.StartupTaskState.DisabledByUser => (false, "Anh/chị đã tắt mục này trong Settings > Apps > Startup, bật lại ở đó."),
-                Windows.ApplicationModel.StartupTaskState.DisabledByPolicy => (false, "Chính sách máy không cho app tự chạy."),
-                _ => (false, "Windows không cho bật tự chạy lúc này."),
+                Windows.ApplicationModel.StartupTaskState.DisabledByUser => (false, Chu.TuChayBiTat),
+                Windows.ApplicationModel.StartupTaskState.DisabledByPolicy => (false, Chu.TuChayBiChan),
+                _ => (false, Chu.TuChayKhongDuoc),
             };
         }
         catch (Exception e) { NhatKy.Ghi("StartupTask đặt lỗi", e); return (false, e.Message); }

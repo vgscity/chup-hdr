@@ -24,12 +24,29 @@ sealed class UngDungKhay : ApplicationContext
         khay = new NotifyIcon
         {
             Icon = TaoIcon(),
-            Text = "VGScreenshotHDR · PrtScn để chụp",
+            Text = Chu.TenApp,
             Visible = true,
             ContextMenuStrip = TaoMenu(),
         };
         khay.DoubleClick += (_, _) => MoCuaSoChinh();
         khay.BalloonTipClicked += (_, _) => MoThuMuc();
+        NgonNgu.Doi += () =>
+        {
+            var cu = khay.ContextMenuStrip;
+            khay.ContextMenuStrip = TaoMenu();
+            cu?.Dispose();
+            CapNhatNhanPhim();
+            // Cửa sổ đang mở dựng lại bằng ngôn ngữ mới, giữ nguyên chỗ
+            if (cuaSoChinh is { IsDisposed: false } cs)
+            {
+                var viTri = cs.Location;
+                cs.Close();
+                MoCuaSoChinh();
+                cuaSoChinh!.StartPosition = FormStartPosition.Manual;
+                cuaSoChinh.Location = viTri;
+            }
+            HopGioiThieu.DungLaiNeuDangMo();
+        };
 
         DangKyHotkey();
         NhatKy.Ghi("Khởi động VGScreenshotHDR " + Application.ProductVersion);
@@ -73,10 +90,8 @@ sealed class UngDungKhay : ApplicationContext
 
         if (TrangThai[HK_CHON] == TrangThaiPhim.Loi)
         {
-            string loi = SnipDangGiuPrtScn()
-                ? "Windows đang gán PrtScn cho Snipping Tool. Bấm phải vào biểu tượng → 'Trả phím PrtScn cho VGS' rồi làm theo hướng dẫn."
-                : "App khác (Lightshot, ShareX, Greenshot…) đang giữ phím này. Tắt app đó, hoặc đổi phím trong cửa sổ VGScreenshotHDR.";
-            khay.ShowBalloonTip(8000, "Chưa bắt được phím " + CaiDat.TenPhim(CaiDat.HienTai.PhimChon), loi, ToolTipIcon.Warning);
+            string loi = SnipDangGiuPrtScn() ? Chu.SnipGiuPrtScn : Chu.AppKhacGiuPhim;
+            khay.ShowBalloonTip(8000, Chu.ChuaBatDuocPhim(CaiDat.TenPhim(CaiDat.HienTai.PhimChon)), loi, ToolTipIcon.Warning);
         }
         CapNhatNhanPhim();
     }
@@ -94,7 +109,7 @@ sealed class UngDungKhay : ApplicationContext
         mucChon.ShortcutKeyDisplayString = CaiDat.TenPhim(CaiDat.HienTai.PhimChon);
         mucToan.ShortcutKeyDisplayString = CaiDat.TenPhim(CaiDat.HienTai.PhimToan);
         mucCuaSo.ShortcutKeyDisplayString = CaiDat.TenPhim(CaiDat.HienTai.PhimCuaSo);
-        var chu = "VGScreenshotHDR · " + CaiDat.TenPhim(CaiDat.HienTai.PhimChon) + " để chụp";
+        var chu = Chu.GoiYKhay(CaiDat.TenPhim(CaiDat.HienTai.PhimChon));
         khay.Text = chu.Length > 63 ? chu[..63] : chu;   // NotifyIcon.Text tối đa 63 ký tự
     }
 
@@ -112,7 +127,7 @@ sealed class UngDungKhay : ApplicationContext
         catch (Exception e)
         {
             NhatKy.Ghi("Xử lý hotkey lỗi", e);
-            khay.ShowBalloonTip(5000, "Chụp lỗi", e.Message, ToolTipIcon.Error);
+            khay.ShowBalloonTip(5000, Chu.ChupLoi, e.Message, ToolTipIcon.Error);
         }
     }
 
@@ -150,12 +165,12 @@ sealed class UngDungKhay : ApplicationContext
         vung.Offset(-kq.VungAo.X, -kq.VungAo.Y);
         using var a = kq.Anh.Clone(vung, kq.Anh.PixelFormat);
         XuatAnh.Chep(a);
-        string loi = "Đã chép vào clipboard";
-        if (CaiDat.HienTai.TuLuuKhiChep) loi += " · lưu " + Path.GetFileName(XuatAnh.Luu(a));
+        string loi = Chu.DaChep;
+        if (CaiDat.HienTai.TuLuuKhiChep) loi += Chu.VaLuu(Path.GetFileName(XuatAnh.Luu(a)));
         ThongBao(loi);
     }
 
-    void ThongBao(string loi) => khay.ShowBalloonTip(2500, "VGScreenshotHDR", loi, ToolTipIcon.Info);
+    void ThongBao(string loi) => khay.ShowBalloonTip(2500, Chu.TenApp, loi, ToolTipIcon.Info);
 
     static string MoTa(ThongTinManHinh m) =>
         $"{m.Ten} {m.Vung.Width}×{m.Vung.Height} {(m.Hdr ? "HDR" : "SDR")} trắngSDR={m.TrangSdrNits:0}nits đỉnh={m.DinhNits:0}nits fmt={m.DinhDang}{(m.CoNoiDungHdr ? " (có nội dung HDR)" : "")}{(m.GhiChu != "" ? " " + m.GhiChu : "")}";
@@ -167,32 +182,34 @@ sealed class UngDungKhay : ApplicationContext
         m.Items.Add(new DauMenu(MoCuaSoChinh));
         m.Items.Add(new ToolStripSeparator());
         // "\t" không tạo cột phím tắt trong ContextMenuStrip (chữ bị dính "Chụp chọn vùngPrtScn") → dùng ShortcutKeyDisplayString
-        mucChon = new ToolStripMenuItem("Chụp chọn vùng", null, (_, _) => XuLyHotkey(HK_CHON)) { Font = new Font(m.Font, FontStyle.Bold) };
-        mucToan = new ToolStripMenuItem("Chụp toàn màn hình", null, (_, _) => XuLyHotkey(HK_TOAN));
-        mucCuaSo = new ToolStripMenuItem("Chụp cửa sổ đang mở", null, (_, _) => XuLyHotkey(HK_CUA_SO));
+        mucChon = new ToolStripMenuItem(Chu.ChupChonVung, null, (_, _) => XuLyHotkey(HK_CHON)) { Font = new Font(m.Font, FontStyle.Bold) };
+        mucToan = new ToolStripMenuItem(Chu.ChupToanMan, null, (_, _) => XuLyHotkey(HK_TOAN));
+        mucCuaSo = new ToolStripMenuItem(Chu.ChupCuaSo, null, (_, _) => XuLyHotkey(HK_CUA_SO));
         m.Items.AddRange(new ToolStripItem[] { mucChon, mucToan, mucCuaSo });
         m.Items.Add(new ToolStripSeparator());
-        m.Items.Add(new ToolStripMenuItem("Mở cửa sổ cài đặt…", null, (_, _) => MoCuaSoChinh()) { ShortcutKeyDisplayString = "Nhấp đúp icon" });
-        m.Items.Add("Mở thư mục ảnh", null, (_, _) => MoThuMuc());
-        m.Items.Add("Đổi thư mục lưu…", null, (_, _) => DoiThuMuc());
-        mucTuLuu = new ToolStripMenuItem("Tự lưu file khi chép") { Checked = CaiDat.HienTai.TuLuuKhiChep, CheckOnClick = true };
+        m.Items.Add(new ToolStripMenuItem(Chu.MoCaiDat, null, (_, _) => MoCuaSoChinh()) { ShortcutKeyDisplayString = Chu.NhapDupIcon });
+        m.Items.Add(Chu.MoThuMucAnh, null, (_, _) => MoThuMuc());
+        m.Items.Add(Chu.DoiThuMucLuu, null, (_, _) => DoiThuMuc());
+        // Dựng lại menu khi đổi ngôn ngữ: giữ trạng thái tự chạy đang có (bản Store hỏi StartupTask bất đồng bộ)
+        bool tuChayCu = mucTuChay != null ? mucTuChay.Checked : !GoiStore.DangTrongGoi && DangTuChay();
+        mucTuLuu = new ToolStripMenuItem(Chu.TuLuuKhiChep) { Checked = CaiDat.HienTai.TuLuuKhiChep, CheckOnClick = true };
         mucTuLuu.CheckedChanged += (_, _) => { CaiDat.HienTai.TuLuuKhiChep = mucTuLuu.Checked; CaiDat.HienTai.Luu(); CaiDatDoi?.Invoke(); };
         m.Items.Add(mucTuLuu);
-        mucTuChay = new ToolStripMenuItem("Tự chạy khi đăng nhập") { Checked = !GoiStore.DangTrongGoi && DangTuChay(), CheckOnClick = true };
+        mucTuChay = new ToolStripMenuItem(Chu.TuChayKhiDangNhap) { Checked = tuChayCu, CheckOnClick = true };
         mucTuChay.CheckedChanged += (_, _) => { if (!dangDatTuChay) _ = DatTuChayAsync(mucTuChay.Checked); CaiDatDoi?.Invoke(); };
         m.Items.Add(mucTuChay);
-        if (GoiStore.DangTrongGoi) _ = CapNhatTuChayTuGoiAsync();
+        if (GoiStore.DangTrongGoi && !daHoiTuChay) { daHoiTuChay = true; _ = CapNhatTuChayTuGoiAsync(); }
         m.Items.Add(new ToolStripSeparator());
-        mucSuaSnip = new ToolStripMenuItem(GoiStore.DangTrongGoi ? "Trả phím PrtScn cho VGS (mở Settings)…" : "Trả phím PrtScn cho VGS (tắt Snipping Tool)");
+        mucSuaSnip = new ToolStripMenuItem(GoiStore.DangTrongGoi ? Chu.TraPhimSettings : Chu.TraPhimTatSnip);
         mucSuaSnip.Click += (_, _) => TraPhimPrtScn();
         m.Items.Add(mucSuaSnip);
-        m.Items.Add("Thông tin màn hình HDR…", null, (_, _) => HienThongTinManHinh());
-        m.Items.Add("Xem nhật ký lỗi", null, (_, _) => { NhatKy.Ghi("Mở nhật ký"); Process.Start(new ProcessStartInfo(NhatKy.DuongDan) { UseShellExecute = true }); });
+        m.Items.Add(Chu.ThongTinManHdr, null, (_, _) => HienThongTinManHinh());
+        m.Items.Add(Chu.XemNhatKy, null, (_, _) => { NhatKy.Ghi("Mở nhật ký"); Process.Start(new ProcessStartInfo(NhatKy.DuongDan) { UseShellExecute = true }); });
         m.Items.Add(new ToolStripSeparator());
-        m.Items.Add("Giới thiệu…", null, (_, _) => HopGioiThieu.Hien());
-        m.Items.Add(new ToolStripMenuItem("Thêm tiện ích VGS tại vgs.zone", null, (_, _) => GiaoDien.MoTrangVgs()) { ForeColor = GiaoDien.Hong });
+        m.Items.Add(Chu.GioiThieuMenu, null, (_, _) => HopGioiThieu.Hien());
+        m.Items.Add(new ToolStripMenuItem(Chu.ThemTienIch, null, (_, _) => GiaoDien.MoTrangVgs()) { ForeColor = GiaoDien.Hong });
         m.Items.Add(new ToolStripSeparator());
-        m.Items.Add("Thoát", null, (_, _) => Thoat());
+        m.Items.Add(Chu.Thoat, null, (_, _) => Thoat());
         m.Opening += (_, _) => mucSuaSnip.Visible = SnipDangGiuPrtScn();
         return m;
     }
@@ -205,7 +222,7 @@ sealed class UngDungKhay : ApplicationContext
 
     public void DoiThuMuc(IWin32Window? chu = null)
     {
-        using var hop = new FolderBrowserDialog { SelectedPath = CaiDat.HienTai.ThuMuc, Description = "Chọn thư mục lưu ảnh chụp", UseDescriptionForTitle = true };
+        using var hop = new FolderBrowserDialog { SelectedPath = CaiDat.HienTai.ThuMuc, Description = Chu.ChonThuMuc, UseDescriptionForTitle = true };
         if (hop.ShowDialog(chu) == DialogResult.OK) { CaiDat.HienTai.ThuMuc = hop.SelectedPath; CaiDat.HienTai.Luu(); CaiDatDoi?.Invoke(); }
     }
 
@@ -234,20 +251,16 @@ sealed class UngDungKhay : ApplicationContext
         if (GoiStore.DangTrongGoi)
         {
             Process.Start(new ProcessStartInfo("ms-settings:easeofaccess-keyboard") { UseShellExecute = true });
-            MessageBox.Show("Windows đang gán phím PrtScn cho Snipping Tool.\n\nTrong trang Settings vừa mở, tắt mục "
-                + "\"Use the Print screen key to open screen capture\" (Dùng phím Print screen để mở chụp màn hình), "
-                + "rồi đăng xuất và đăng nhập lại Windows để phím PrtScn về VGScreenshotHDR.",
-                "VGScreenshotHDR", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(Chu.HuongDanSettingsSnip, Chu.TenApp, MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
         try
         {
             using var k = Registry.CurrentUser.OpenSubKey(@"Control Panel\Keyboard", writable: true);
             k?.SetValue("PrintScreenKeyForSnippingEnabled", 0, RegistryValueKind.DWord);
-            MessageBox.Show("Đã tắt 'PrtScn mở Snipping Tool'. Đăng xuất rồi đăng nhập lại Windows (hoặc khởi động lại) để phím PrtScn về VGScreenshotHDR.",
-                "VGScreenshotHDR", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(Chu.DaTatSnip, Chu.TenApp, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
-        catch (Exception e) { NhatKy.Ghi("Sửa registry PrtScn lỗi", e); MessageBox.Show("Không sửa được: " + e.Message); }
+        catch (Exception e) { NhatKy.Ghi("Sửa registry PrtScn lỗi", e); MessageBox.Show(Chu.KhongSuaDuoc(e.Message)); }
     }
 
     void HienThongTinManHinh()
@@ -256,17 +269,17 @@ sealed class UngDungKhay : ApplicationContext
         {
             using var kq = Chup.ChupTatCa();
             var dong = kq.ManHinh.Select(m =>
-                $"{m.Ten}: {m.Vung.Width}×{m.Vung.Height} tại ({m.Vung.X},{m.Vung.Y})\n" +
-                $"   {(m.Hdr ? "HDR đang bật" : "SDR")} · định dạng khung {m.DinhDang}\n" +
-                $"   Mức trắng SDR: {m.TrangSdrNits:0} nits · đỉnh sáng: {m.DinhNits:0} nits" +
+                Chu.ManTai(m.Ten, m.Vung.Width, m.Vung.Height, m.Vung.X, m.Vung.Y) + "\n" +
+                $"   {(m.Hdr ? Chu.HdrDangBat : "SDR")} · {Chu.DinhDangKhung(m.DinhDang)}\n" +
+                "   " + Chu.MucTrang(m.TrangSdrNits, m.DinhNits) +
                 (m.GhiChu != "" ? "\n   " + m.GhiChu : ""));
-            MessageBox.Show(string.Join("\n\n", dong) + $"\n\nNhật ký: {NhatKy.DuongDan}", "Thông tin màn hình", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(string.Join("\n\n", dong) + "\n\n" + Chu.NhatKyO(NhatKy.DuongDan), Chu.ThongTinMan, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
-        catch (Exception e) { MessageBox.Show("Lỗi: " + e.Message + "\n\nXem nhật ký: " + NhatKy.DuongDan, "Thông tin màn hình"); }
+        catch (Exception e) { MessageBox.Show(Chu.LoiXemNhatKy(e.Message, NhatKy.DuongDan), Chu.ThongTinMan); }
     }
 
     // ───── tự chạy ─────
-    bool dangDatTuChay;
+    bool dangDatTuChay, daHoiTuChay;
     async Task CapNhatTuChayTuGoiAsync()
     {
         bool bat = await GoiStore.DangTuChayAsync();
@@ -277,7 +290,7 @@ sealed class UngDungKhay : ApplicationContext
         if (!GoiStore.DangTrongGoi) { DatTuChay(bat); return; }
         var (ketQua, lyDo) = await GoiStore.DatTuChayAsync(bat);
         dangDatTuChay = true; mucTuChay.Checked = ketQua; dangDatTuChay = false;
-        if (lyDo != null) khay.ShowBalloonTip(6000, "Tự chạy khi đăng nhập", lyDo, ToolTipIcon.Warning);
+        if (lyDo != null) khay.ShowBalloonTip(6000, Chu.TuChayKhiDangNhap, lyDo, ToolTipIcon.Warning);
     }
     const string KhoaRun = @"Software\Microsoft\Windows\CurrentVersion\Run";
     static bool DangTuChay()

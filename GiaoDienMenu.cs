@@ -107,9 +107,15 @@ sealed class VeMenuToi : ToolStripProfessionalRenderer
 sealed class DauMenu : ToolStripMenuItem
 {
     readonly Image? logo = GiaoDien.Logo();
-    const string MoTa = "Chụp màn hình HDR đúng màu, không cháy sáng";
+    static string MoTa => Chu.MoTaNgan;
 
-    public DauMenu(Action khiBam) : base("VGScreenshotHDR") { Click += (_, _) => khiBam(); }
+    // Menu thả xuống tính bề rộng theo Text của mục (bỏ qua GetPreferredSize) → đặt Text bằng câu giới thiệu
+    // + khoảng đệm cho logo, để câu không bị cắt (bản tiếng Anh dài hơn từng bị cắt "…highlig").
+    public DauMenu(Action khiBam) : base(MoTa + "    ")
+    {
+        AccessibleName = Chu.TenApp;
+        Click += (_, _) => khiBam();
+    }
 
     float TiLe => (Owner?.DeviceDpi ?? 96) / 96f;
 
@@ -139,8 +145,8 @@ sealed class DauMenu : ToolStripMenuItem
         using var fTen = new Font(Font.FontFamily, Font.Size * 1.15f, FontStyle.Bold);
         using var fMo = new Font(Font.FontFamily, Font.Size * 0.9f);
         int yTen = (int)(9 * k);
-        TextRenderer.DrawText(g, "VGScreenshotHDR", fTen, new Point(x, yTen), Color.White);
-        int rongTen = TextRenderer.MeasureText("VGScreenshotHDR", fTen).Width;
+        TextRenderer.DrawText(g, Chu.TenApp, fTen, new Point(x, yTen), Color.White);
+        int rongTen = TextRenderer.MeasureText(Chu.TenApp, fTen).Width;
         TextRenderer.DrawText(g, "v" + GiaoDien.PhienBan, fMo, new Point(x + rongTen, yTen + (int)(3 * k)), GiaoDien.ChuMo);
         TextRenderer.DrawText(g, MoTa, fMo, new Point(x, yTen + fTen.Height + (int)(2 * k)), Color.FromArgb(200, 200, 200));
     }
@@ -151,7 +157,7 @@ sealed class HopGioiThieu : Form
 {
     public HopGioiThieu()
     {
-        Text = "Giới thiệu VGScreenshotHDR";
+        Text = Chu.GioiThieuTieuDe;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = MinimizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
@@ -182,8 +188,8 @@ sealed class HopGioiThieu : Form
         var hangDau = new FlowLayoutPanel { AutoSize = true, BackColor = Color.Transparent, Margin = Padding.Empty, WrapContents = false };
         var logo = new PictureBox { Image = GiaoDien.Logo(), SizeMode = PictureBoxSizeMode.Zoom, Size = new Size(Px(56), Px(56)), Margin = new Padding(0, 0, Px(16), 0), BackColor = Color.Transparent };
         var cotTen = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, BackColor = Color.Transparent, Margin = Padding.Empty, WrapContents = false };
-        cotTen.Controls.Add(Nhan("VGScreenshotHDR", new Font("Segoe UI Semibold", 17f), Color.White, 0));
-        cotTen.Controls.Add(Nhan($"Phiên bản {GiaoDien.PhienBan} · by VGS", new Font("Segoe UI", 9.5f), Color.FromArgb(240, 240, 240), 0));
+        cotTen.Controls.Add(Nhan(Chu.TenApp, new Font("Segoe UI Semibold", 17f), Color.White, 0));
+        cotTen.Controls.Add(Nhan(Chu.PhienBan(GiaoDien.PhienBan), new Font("Segoe UI", 9.5f), Color.FromArgb(240, 240, 240), 0));
         hangDau.Controls.Add(logo);
         hangDau.Controls.Add(cotTen);
         dai.Controls.Add(hangDau);
@@ -195,15 +201,14 @@ sealed class HopGioiThieu : Form
             AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1,
             Padding = new Padding(Px(24), Px(18), Px(24), Px(20)), Margin = Padding.Empty,
         };
-        than.Controls.Add(Nhan("Bật HDR thì nút PrtScn của Windows chụp ra ảnh bạc màu, cháy sáng. "
-            + "VGScreenshotHDR đọc thẳng dữ liệu HDR của màn hình rồi chuyển về đúng màu mắt bạn thấy.", Font, GiaoDien.Chu, rong - Px(48)));
+        than.Controls.Add(Nhan(Chu.GioiThieuNoiDung, Font, GiaoDien.Chu, rong - Px(48)));
 
         var bangPhim = new TableLayoutPanel { AutoSize = true, ColumnCount = 2, Margin = new Padding(0, Px(14), 0, Px(4)) };
         foreach (var (phim, viec) in new[]
         {
-            ("PrtScn", "Chọn vùng, vẽ chú thích, chép / lưu"),
-            ("Shift+PrtScn", "Chụp toàn màn hình"),
-            ("Alt+PrtScn", "Chụp cửa sổ đang mở"),
+            (CaiDat.TenPhim(CaiDat.HienTai.PhimChon), Chu.GoiYChonVung),
+            (CaiDat.TenPhim(CaiDat.HienTai.PhimToan), Chu.GoiYToanMan),
+            (CaiDat.TenPhim(CaiDat.HienTai.PhimCuaSo), Chu.GoiYCuaSo),
         })
         {
             var nhanPhim = Nhan(phim, new Font("Segoe UI Semibold", 10f), GiaoDien.Hong, 0);
@@ -214,7 +219,7 @@ sealed class HopGioiThieu : Form
             bangPhim.Controls.Add(nhanViec);
         }
         than.Controls.Add(bangPhim);
-        var nhanCongCu = Nhan("Trong khung chọn: P bút · L đường · A mũi tên · R khung · M đánh dấu · T chữ · Ctrl+Z hoàn tác",
+        var nhanCongCu = Nhan(Chu.CongCuTrongKhung,
             new Font("Segoe UI", 9f), GiaoDien.ChuMo, rong - Px(48));
         nhanCongCu.Margin = new Padding(0, Px(6), 0, Px(14));
         than.Controls.Add(nhanCongCu);
@@ -224,7 +229,7 @@ sealed class HopGioiThieu : Form
             AutoSize = true,
             MaximumSize = new Size(rong - Px(48), 0),
             UseMnemonic = false,   // không thì "&" bị nuốt thành phím tắt
-            Text = "Thêm tiện ích miễn phí cho game thủ & dân văn phòng tại vgs.zone",
+            Text = Chu.ThemTienIchDai,
             ForeColor = GiaoDien.Chu,
             LinkColor = GiaoDien.Hong,
             ActiveLinkColor = Color.White,
@@ -239,9 +244,9 @@ sealed class HopGioiThieu : Form
         hangNut.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         hangNut.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         hangNut.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        var nutVgs = TaoNut("Mở vgs.zone", true, k);
+        var nutVgs = TaoNut(Chu.MoVgs, true, k);
         nutVgs.Click += (_, _) => GiaoDien.MoTrangVgs();
-        var nutDong = TaoNut("Đóng", false, k);
+        var nutDong = TaoNut(Chu.Dong, false, k);
         nutDong.Click += (_, _) => Close();
         hangNut.Controls.Add(nutVgs, 0, 0);
         hangNut.Controls.Add(nutDong, 2, 0);
@@ -300,5 +305,15 @@ sealed class HopGioiThieu : Form
         dangMo = new HopGioiThieu();
         dangMo.FormClosed += (_, _) => dangMo = null;
         dangMo.Show();
+    }
+
+    /// Đổi ngôn ngữ: hộp đang mở thì dựng lại tại chỗ cũ
+    public static void DungLaiNeuDangMo()
+    {
+        if (dangMo == null || dangMo.IsDisposed) return;
+        var viTri = dangMo.Location;
+        dangMo.Close();
+        Hien();
+        dangMo!.Location = viTri;
     }
 }
