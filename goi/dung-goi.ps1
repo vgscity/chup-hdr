@@ -28,6 +28,8 @@ $App = (Resolve-Path $App).Path
 $assets = Join-Path $App "Assets"
 New-Item -ItemType Directory -Force $assets | Out-Null
 Get-ChildItem "goi/anh" -Filter "*.png" | Where-Object { $_.Name -match '^(Square|Wide|StoreLogo)' } | Copy-Item -Destination $assets -Force
+# Không có resources.pri nên makeappx cần cả tên gốc (không qualifier): lấy bản scale-100
+Get-ChildItem $assets -Filter "*.scale-100.png" | ForEach-Object { Copy-Item $_.FullName (Join-Path $assets ($_.Name -replace '\.scale-100', '')) -Force }
 
 $mf = Get-Content "goi/AppxManifest.xml" -Raw
 $mf = $mf.Replace("__IDENTITY_NAME__", $IdentityName).Replace("__PUBLISHER__", $Publisher).Replace("__PUBLISHER_DISPLAY__", $PublisherDisplay).Replace("__VERSION__", $Version)
