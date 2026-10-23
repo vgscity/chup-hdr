@@ -39,13 +39,11 @@ sealed class UngDungKhay : ApplicationContext
             // Cửa sổ đang mở dựng lại bằng ngôn ngữ mới, giữ nguyên chỗ
             if (cuaSoChinh is { IsDisposed: false } cs)
             {
-                var viTri = cs.Location;
+                var (viTri, trang) = (cs.Location, cs.TrangHienTai);
                 cs.Close();
-                MoCuaSoChinh();
-                cuaSoChinh!.StartPosition = FormStartPosition.Manual;
-                cuaSoChinh.Location = viTri;
+                MoCuaSoChinh(trang);
+                cuaSoChinh!.Location = viTri;
             }
-            HopGioiThieu.DungLaiNeuDangMo();
         };
 
         DangKyHotkey();
@@ -179,7 +177,7 @@ sealed class UngDungKhay : ApplicationContext
     ContextMenuStrip TaoMenu()
     {
         var m = new ContextMenuStrip { Renderer = new VeMenuToi(), ShowImageMargin = true };
-        m.Items.Add(new DauMenu(MoCuaSoChinh));
+        m.Items.Add(new DauMenu(() => MoCuaSoChinh()));
         m.Items.Add(new ToolStripSeparator());
         // "\t" không tạo cột phím tắt trong ContextMenuStrip (chữ bị dính "Chụp chọn vùngPrtScn") → dùng ShortcutKeyDisplayString
         mucChon = new ToolStripMenuItem(Chu.ChupChonVung, null, (_, _) => XuLyHotkey(HK_CHON)) { Font = new Font(m.Font, FontStyle.Bold) };
@@ -204,9 +202,9 @@ sealed class UngDungKhay : ApplicationContext
         mucSuaSnip.Click += (_, _) => TraPhimPrtScn();
         m.Items.Add(mucSuaSnip);
         m.Items.Add(Chu.ThongTinManHdr, null, (_, _) => HienThongTinManHinh());
-        m.Items.Add(Chu.XemNhatKy, null, (_, _) => { NhatKy.Ghi("Mở nhật ký"); Process.Start(new ProcessStartInfo(NhatKy.DuongDan) { UseShellExecute = true }); });
+        m.Items.Add(Chu.XemNhatKy, null, (_, _) => XemNhatKy());
         m.Items.Add(new ToolStripSeparator());
-        m.Items.Add(Chu.GioiThieuMenu, null, (_, _) => HopGioiThieu.Hien());
+        m.Items.Add(Chu.GioiThieuMenu, null, (_, _) => MoCuaSoChinh(CuaSoChinh.Trang.GioiThieu));
         m.Items.Add(new ToolStripMenuItem(Chu.ThemTienIch, null, (_, _) => GiaoDien.MoTrangVgs()) { ForeColor = GiaoDien.Hong });
         m.Items.Add(new ToolStripSeparator());
         m.Items.Add(Chu.Thoat, null, (_, _) => Thoat());
@@ -234,14 +232,15 @@ sealed class UngDungKhay : ApplicationContext
     public bool TuLuu { get => mucTuLuu.Checked; set => mucTuLuu.Checked = value; }
     public bool TuChay { get => mucTuChay.Checked; set => mucTuChay.Checked = value; }
 
-    void MoCuaSoChinh()
+    void MoCuaSoChinh(CuaSoChinh.Trang? trang = null)
     {
         if (cuaSoChinh == null || cuaSoChinh.IsDisposed)
         {
-            cuaSoChinh = new CuaSoChinh(this);
+            cuaSoChinh = new CuaSoChinh(this, trang ?? CuaSoChinh.Trang.TongQuan);
             cuaSoChinh.FormClosed += (_, _) => cuaSoChinh = null;
             cuaSoChinh.Show();
         }
+        else if (trang is CuaSoChinh.Trang t) cuaSoChinh.HienTrang(t);
         if (cuaSoChinh.WindowState == FormWindowState.Minimized) cuaSoChinh.WindowState = FormWindowState.Normal;
         cuaSoChinh.Activate();
     }
@@ -263,7 +262,14 @@ sealed class UngDungKhay : ApplicationContext
         catch (Exception e) { NhatKy.Ghi("Sửa registry PrtScn lỗi", e); MessageBox.Show(Chu.KhongSuaDuoc(e.Message)); }
     }
 
-    void HienThongTinManHinh()
+    public void XemNhatKy()
+    {
+        NhatKy.Ghi("Mở nhật ký");
+        try { Process.Start(new ProcessStartInfo(NhatKy.DuongDan) { UseShellExecute = true }); }
+        catch (Exception e) { MessageBox.Show(Chu.LoiXemNhatKy(e.Message, NhatKy.DuongDan), Chu.TenApp); }
+    }
+
+    public void HienThongTinManHinh()
     {
         try
         {

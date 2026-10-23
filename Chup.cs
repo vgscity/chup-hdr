@@ -47,7 +47,16 @@ public static class Chup
         return b;
     }
 
-    public static KetQuaChup ChupTatCa()
+    /// Chỉ đọc thông tin các màn hình (HDR, mức trắng SDR), không chụp — cho thẻ trạng thái ở cửa sổ chính
+    public static List<ThongTinManHinh> DocManHinh()
+    {
+        var danhSach = LietKe();
+        foreach (var (_, _, output) in danhSach) output.Dispose();
+        foreach (var adapter in danhSach.Select(x => x.adapter).Distinct()) adapter.Dispose();
+        return danhSach.Select(x => x.info).ToList();
+    }
+
+    static List<(ThongTinManHinh info, IDXGIAdapter1 adapter, IDXGIOutput output)> LietKe()
     {
         var mucTrang = ManHinhSdr.DocTatCa();
         var danhSach = new List<(ThongTinManHinh info, IDXGIAdapter1 adapter, IDXGIOutput output)>();
@@ -75,7 +84,12 @@ public static class Chup
                 }, adapter, output));
             }
         }
+        return danhSach;
+    }
 
+    public static KetQuaChup ChupTatCa()
+    {
+        var danhSach = LietKe();
         if (danhSach.Count == 0) throw new InvalidOperationException("Không tìm thấy màn hình nào qua DXGI.");
 
         var vungAo = danhSach[0].info.Vung;

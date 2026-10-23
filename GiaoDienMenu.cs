@@ -17,6 +17,28 @@ static class GiaoDien
     public static readonly Color Tim = Color.FromArgb(124, 58, 237);
     public static readonly Color Hong = Color.FromArgb(236, 72, 153);
 
+    // Cửa sổ chính: phẳng, ít màu, tím–hồng chỉ cho nút chính, công tắc, mục đang chọn
+    public static readonly Color NenCuaSo = Color.FromArgb(22, 22, 24);
+    public static readonly Color NenThanhBen = Color.FromArgb(28, 28, 31);
+    public static readonly Color VienCuaSo = Color.FromArgb(44, 44, 48);
+    public static readonly Color NenThe = Color.FromArgb(30, 30, 33);
+    public static readonly Color VienThe = Color.FromArgb(46, 46, 51);
+    public static readonly Color NenHdr = Color.FromArgb(31, 26, 46);
+    public static readonly Color VienHdr = Color.FromArgb(59, 47, 92);
+    public static readonly Color NenNut = Color.FromArgb(42, 42, 47);
+    public static readonly Color NenHoverNut = Color.FromArgb(58, 58, 64);
+    public static readonly Color TatCongTac = Color.FromArgb(58, 58, 64);
+    public static readonly Color NenMucChon = Color.FromArgb(42, 35, 64);
+    public static readonly Color NenHoverMuc = Color.FromArgb(36, 36, 40);
+    public static readonly Color ChuPhu = Color.FromArgb(168, 168, 174);
+    public static readonly Color ChuNhat = Color.FromArgb(142, 142, 149);
+    public static readonly Color TimNhat = Color.FromArgb(196, 181, 253);
+    public static readonly Color HongNhat = Color.FromArgb(249, 168, 212);
+    public static readonly Color XanhOk = Color.FromArgb(74, 222, 128);
+    public static readonly Color CamCanhBao = Color.FromArgb(251, 146, 60);
+    public static readonly Color NenPhim = Color.FromArgb(42, 42, 47);
+    public static readonly Color VienPhim = Color.FromArgb(68, 68, 75);
+
     public static string PhienBan
     {
         get
@@ -149,171 +171,5 @@ sealed class DauMenu : ToolStripMenuItem
         int rongTen = TextRenderer.MeasureText(Chu.TenApp, fTen).Width;
         TextRenderer.DrawText(g, "v" + GiaoDien.PhienBan, fMo, new Point(x + rongTen, yTen + (int)(3 * k)), GiaoDien.ChuMo);
         TextRenderer.DrawText(g, MoTa, fMo, new Point(x, yTen + fTen.Height + (int)(2 * k)), Color.FromArgb(200, 200, 200));
-    }
-}
-
-/// Hộp "Giới thiệu": app làm gì, phím tắt, dẫn về vgs.zone.
-sealed class HopGioiThieu : Form
-{
-    public HopGioiThieu()
-    {
-        Text = Chu.GioiThieuTieuDe;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = MinimizeBox = false;
-        StartPosition = FormStartPosition.CenterScreen;
-        BackColor = GiaoDien.Nen;
-        ForeColor = GiaoDien.Chu;
-        Font = new Font("Segoe UI", 10f);
-        ShowInTaskbar = true;
-        TopMost = true;
-        try { Icon = Icon.ExtractAssociatedIcon(Environment.ProcessPath!); } catch { }
-
-        // Bố cục tự co theo chữ (toạ độ cố định từng vỡ ở màn scale 150–200%): chỉ bề rộng cột chữ đặt theo DPI.
-        AutoScaleMode = AutoScaleMode.None;
-        AutoSize = true;
-        AutoSizeMode = AutoSizeMode.GrowAndShrink;
-        float k = DeviceDpi / 96f;
-        int Px(int v) => (int)(v * k);
-        int rong = Px(440);
-
-        var khung = new TableLayoutPanel
-        {
-            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            ColumnCount = 1, Padding = Padding.Empty, Margin = Padding.Empty,
-        };
-        Controls.Add(khung);
-
-        // ── dải đầu gradient: logo + tên + phiên bản
-        var dai = new DaiGradient { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty, Padding = new Padding(Px(24), Px(22), Px(24), Px(22)), MinimumSize = new Size(rong, 0) };
-        var hangDau = new FlowLayoutPanel { AutoSize = true, BackColor = Color.Transparent, Margin = Padding.Empty, WrapContents = false };
-        var logo = new PictureBox { Image = GiaoDien.Logo(), SizeMode = PictureBoxSizeMode.Zoom, Size = new Size(Px(56), Px(56)), Margin = new Padding(0, 0, Px(16), 0), BackColor = Color.Transparent };
-        var cotTen = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, BackColor = Color.Transparent, Margin = Padding.Empty, WrapContents = false };
-        cotTen.Controls.Add(Nhan(Chu.TenApp, new Font("Segoe UI Semibold", 17f), Color.White, 0));
-        cotTen.Controls.Add(Nhan(Chu.PhienBan(GiaoDien.PhienBan), new Font("Segoe UI", 9.5f), Color.FromArgb(240, 240, 240), 0));
-        hangDau.Controls.Add(logo);
-        hangDau.Controls.Add(cotTen);
-        dai.Controls.Add(hangDau);
-        khung.Controls.Add(dai);
-
-        // ── nội dung
-        var than = new TableLayoutPanel
-        {
-            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1,
-            Padding = new Padding(Px(24), Px(18), Px(24), Px(20)), Margin = Padding.Empty,
-        };
-        than.Controls.Add(Nhan(Chu.GioiThieuNoiDung, Font, GiaoDien.Chu, rong - Px(48)));
-
-        var bangPhim = new TableLayoutPanel { AutoSize = true, ColumnCount = 2, Margin = new Padding(0, Px(14), 0, Px(4)) };
-        foreach (var (phim, viec) in new[]
-        {
-            (CaiDat.TenPhim(CaiDat.HienTai.PhimChon), Chu.GoiYChonVung),
-            (CaiDat.TenPhim(CaiDat.HienTai.PhimToan), Chu.GoiYToanMan),
-            (CaiDat.TenPhim(CaiDat.HienTai.PhimCuaSo), Chu.GoiYCuaSo),
-        })
-        {
-            var nhanPhim = Nhan(phim, new Font("Segoe UI Semibold", 10f), GiaoDien.Hong, 0);
-            nhanPhim.Margin = new Padding(0, Px(2), Px(16), Px(2));
-            var nhanViec = Nhan(viec, Font, GiaoDien.Chu, 0);
-            nhanViec.Margin = new Padding(0, Px(2), 0, Px(2));
-            bangPhim.Controls.Add(nhanPhim);
-            bangPhim.Controls.Add(nhanViec);
-        }
-        than.Controls.Add(bangPhim);
-        var nhanCongCu = Nhan(Chu.CongCuTrongKhung,
-            new Font("Segoe UI", 9f), GiaoDien.ChuMo, rong - Px(48));
-        nhanCongCu.Margin = new Padding(0, Px(6), 0, Px(14));
-        than.Controls.Add(nhanCongCu);
-
-        var lienKet = new LinkLabel
-        {
-            AutoSize = true,
-            MaximumSize = new Size(rong - Px(48), 0),
-            UseMnemonic = false,   // không thì "&" bị nuốt thành phím tắt
-            Text = Chu.ThemTienIchDai,
-            ForeColor = GiaoDien.Chu,
-            LinkColor = GiaoDien.Hong,
-            ActiveLinkColor = Color.White,
-            VisitedLinkColor = GiaoDien.Hong,
-            Margin = new Padding(0, 0, 0, Px(16)),
-        };
-        lienKet.LinkArea = new LinkArea(lienKet.Text.IndexOf("vgs.zone", StringComparison.Ordinal), "vgs.zone".Length);
-        lienKet.LinkClicked += (_, _) => GiaoDien.MoTrangVgs();
-        than.Controls.Add(lienKet);
-
-        var hangNut = new TableLayoutPanel { AutoSize = true, ColumnCount = 3, Margin = Padding.Empty, MinimumSize = new Size(rong - Px(48), 0) };
-        hangNut.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        hangNut.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        hangNut.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        var nutVgs = TaoNut(Chu.MoVgs, true, k);
-        nutVgs.Click += (_, _) => GiaoDien.MoTrangVgs();
-        var nutDong = TaoNut(Chu.Dong, false, k);
-        nutDong.Click += (_, _) => Close();
-        hangNut.Controls.Add(nutVgs, 0, 0);
-        hangNut.Controls.Add(nutDong, 2, 0);
-        than.Controls.Add(hangNut);
-        khung.Controls.Add(than);
-        CancelButton = nutDong;
-    }
-
-    static Label Nhan(string chu, Font font, Color mau, int rongToiDa) => new()
-    {
-        Text = chu,
-        Font = font,
-        ForeColor = mau,
-        BackColor = Color.Transparent,
-        AutoSize = true,
-        UseMnemonic = false,
-        MaximumSize = new Size(rongToiDa, 0),
-        Margin = Padding.Empty,
-    };
-
-    /// Panel tô nền gradient tím–hồng để nhãn trong suốt bên trên thấy được nền (FlowLayoutPanel để Padding có tác dụng)
-    internal sealed class DaiGradient : FlowLayoutPanel
-    {
-        public DaiGradient() { DoubleBuffered = true; ResizeRedraw = true; }
-        protected override void OnPaintBackground(PaintEventArgs e)
-        {
-            if (ClientRectangle.Width <= 0 || ClientRectangle.Height <= 0) return;
-            using var nen = GiaoDien.ButGradient(ClientRectangle);
-            e.Graphics.FillRectangle(nen, ClientRectangle);
-        }
-    }
-
-    static Button TaoNut(string chu, bool chinh, float k)
-    {
-        var b = new Button
-        {
-            Text = chu,
-            AutoSize = true,
-            MinimumSize = new Size((int)((chinh ? 150 : 100) * k), (int)(38 * k)),
-            Padding = new Padding((int)(10 * k), 0, (int)(10 * k), 0),
-            Margin = Padding.Empty,
-            FlatStyle = FlatStyle.Flat,
-            BackColor = chinh ? GiaoDien.Tim : Color.FromArgb(45, 45, 45),
-            ForeColor = Color.White,
-            Cursor = Cursors.Hand,
-        };
-        b.FlatAppearance.BorderSize = 0;
-        b.FlatAppearance.MouseOverBackColor = chinh ? GiaoDien.Hong : Color.FromArgb(70, 70, 70);
-        return b;
-    }
-
-    static HopGioiThieu? dangMo;
-    public static void Hien()
-    {
-        if (dangMo != null && !dangMo.IsDisposed) { dangMo.Activate(); return; }
-        dangMo = new HopGioiThieu();
-        dangMo.FormClosed += (_, _) => dangMo = null;
-        dangMo.Show();
-    }
-
-    /// Đổi ngôn ngữ: hộp đang mở thì dựng lại tại chỗ cũ
-    public static void DungLaiNeuDangMo()
-    {
-        if (dangMo == null || dangMo.IsDisposed) return;
-        var viTri = dangMo.Location;
-        dangMo.Close();
-        Hien();
-        dangMo!.Location = viTri;
     }
 }

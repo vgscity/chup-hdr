@@ -139,6 +139,33 @@ static class Chu
     public static string NgonNguTuDong => T("Tự động (theo Windows)", "Automatic (follow Windows)");
     public static string ThemTienIchTai => T("Thêm tiện ích miễn phí tại vgs.zone", "More free tools at vgs.zone");
 
+    // ── cửa sổ chính kiểu thanh bên
+    public static string TongQuan => T("Tổng quan", "Overview");
+    public static string Chung => T("Chung", "General");
+    public static string ThemTienIchNgan => T("Thêm tiện ích vgs.zone", "More tools at vgs.zone");
+    public static string HdrBat(float nit) => T($"HDR đang bật · trắng SDR {nit:0} nit", $"HDR on · SDR white {nit:0} nits");
+    public static string HdrTat => T("HDR đang tắt", "HDR is off");
+    public static string MoTaHdrBat(string ten, int w, int h) => T($"{ten} · {w}×{h} · ảnh chụp sẽ đúng màu", $"{ten} · {w}×{h} · screenshots keep true colors");
+    public static string MoTaHdrTat(string ten, int w, int h) => T($"{ten} · {w}×{h} · chụp như bình thường, bật HDR trong Settings > Display",
+                                                                  $"{ten} · {w}×{h} · captures as usual, turn on HDR in Settings > Display");
+    public static string KhongDocDuocMan => T("Không đọc được thông tin màn hình", "Couldn't read display info");
+    public static string ThuMucLuu => T("Thư mục lưu", "Save folder");
+    public static string MoTaTuLuu => T("Mỗi lần chép vào clipboard cũng lưu 1 file PNG", "Every copy to the clipboard also saves a PNG");
+    public static string MoTaTuChay => T("Biểu tượng nằm sẵn ở khay, bấm phím tắt là chụp", "Sits in the tray, ready when you press the shortcut");
+    public static string MoTaNgonNgu => T("Mặc định theo ngôn ngữ Windows", "Follows your Windows language by default");
+    public static string TuDongNgan => T("Tự động", "Automatic");
+    public static string SuaPhim => T("Đổi phím", "Change key");
+    public static string XoaPhim => T("Bỏ phím", "Clear key");
+    public static string HuyGhi => T("Huỷ (Esc)", "Cancel (Esc)");
+    public static string TrangThaiHoatDong => T("Hoạt động", "Active");
+    public static string TrangThaiDuPhong => T("Dự phòng", "Fallback");
+    public static string GoiYDuPhong => T("App khác đang giữ tổ hợp này, VGS bắt phím bằng hook dự phòng nên vẫn chạy.",
+                                          "Another app holds this combo; VGS catches it with a fallback hook, so it still works.");
+    public static string TrangThaiChuaDat => T("Chưa đặt", "Not set");
+    public static string TrangThaiBiGiu => T("Bị giữ", "Taken");
+    public static string GoiYBiGiu => T("App khác đang giữ tổ hợp này. Đổi phím khác hoặc tắt app kia.", "Another app holds this combo. Pick another key or close that app.");
+    public static string Xong => T("Xong", "Done");
+
     // ── hộp giới thiệu
     public static string GioiThieuTieuDe => T("Giới thiệu VGScreenshotHDR", "About VGScreenshotHDR");
     public static string GioiThieuNoiDung => T(

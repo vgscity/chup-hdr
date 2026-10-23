@@ -26,15 +26,7 @@ sealed class KhungChon : Form
     PointF viTriChu;
     readonly Font phongChu;
 
-    readonly FlowLayoutPanel thanh;
-    readonly Dictionary<CongCu, Button> nutCongCu = new();
-    Button nutMau = null!;
-    readonly ToolTip goiY = new();
-    readonly ContextMenuStrip menuMau = new();
-
-    static readonly Color NenThanh = Color.FromArgb(31, 31, 31);
-    static readonly Color NenNut = Color.FromArgb(45, 45, 45);
-    static readonly Color NenChon = Color.FromArgb(124, 58, 237);
+    readonly ThanhVe thanh;
 
     public KhungChon(KetQuaChup ketQua, Action<string>? thongBao)
     {
@@ -54,14 +46,11 @@ sealed class KhungChon : Form
         tiLe = Math.Max(1f, DeviceDpi / 96f);
         phongChu = new Font("Segoe UI", 16f * tiLe, FontStyle.Bold, GraphicsUnit.Pixel);
 
-        thanh = new FlowLayoutPanel
-        {
-            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, WrapContents = false,
-            BackColor = NenThanh, Padding = new Padding(4), Margin = Padding.Empty, Visible = false,
-        };
-        TaoThanhCongCu();
+        thanh = new ThanhVe(tiLe, mau, HoanTac, LuuHoiDuongDan, Close, Chep) { Visible = false };
+        thanh.ChonCongCu += ChonCongCu;
+        thanh.ChonMau += DatMau;
+        thanh.HoiMauKhac = cu => { using var cd = new ColorDialog { Color = cu, FullOpen = true }; return cd.ShowDialog(this) == DialogResult.OK ? cd.Color : null; };
         Controls.Add(thanh);
-        TaoMenuMau();
 
         MouseDown += KhiNhanChuot;
         MouseMove += KhiDiChuot;
@@ -70,92 +59,26 @@ sealed class KhungChon : Form
         Shown += (_, _) => { Activate(); BringToFront(); };
     }
 
-    // ───── thanh công cụ ─────
-    void TaoThanhCongCu()
-    {
-        ThemNut(CongCu.But, "", VgsChupHdr.Chu.ButVe);
-        ThemNut(CongCu.Duong, "", VgsChupHdr.Chu.DuongThang);
-        ThemNut(CongCu.MuiTen, "", VgsChupHdr.Chu.MuiTen);
-        ThemNut(CongCu.Khung, "", VgsChupHdr.Chu.KhungChuNhat);
-        ThemNut(CongCu.DanhDau, "", VgsChupHdr.Chu.ButDanhDau);
-        ThemNut(CongCu.Chu, "", VgsChupHdr.Chu.ChuGo);
-        nutMau = ThemNutHanhDong("", VgsChupHdr.Chu.MauVe, (_, _) => menuMau.Show(nutMau, new Point(0, nutMau.Height)));
-        nutMau.ForeColor = mau;
-        ThemNutHanhDong("", VgsChupHdr.Chu.HoanTac, (_, _) => HoanTac());
-        ThemKhoang();
-        ThemNutHanhDong("", VgsChupHdr.Chu.ChepClipboard, (_, _) => Chep());
-        ThemNutHanhDong("", VgsChupHdr.Chu.LuuFile, (_, _) => LuuHoiDuongDan());
-        ThemNutHanhDong("", VgsChupHdr.Chu.DongEsc, (_, _) => Close());
-    }
-
-    Button TaoNut(string kyHieu, string goiYChu)
-    {
-        int c = (int)(36 * tiLe);
-        var b = new Button
-        {
-            Text = kyHieu, Width = c, Height = c, Margin = new Padding(2),
-            FlatStyle = FlatStyle.Flat, BackColor = NenNut, ForeColor = Color.White,
-            Font = new Font("Segoe MDL2 Assets", 13f * tiLe, GraphicsUnit.Pixel),
-            TabStop = false, Cursor = Cursors.Hand,
-        };
-        b.FlatAppearance.BorderSize = 0;
-        b.FlatAppearance.MouseOverBackColor = Color.FromArgb(70, 70, 70);
-        goiY.SetToolTip(b, goiYChu);
-        thanh.Controls.Add(b);
-        return b;
-    }
-
-    void ThemNut(CongCu cc, string kyHieu, string goiYChu)
-    {
-        var b = TaoNut(kyHieu, goiYChu);
-        b.Click += (_, _) => ChonCongCu(congCu == cc ? CongCu.Khong : cc);
-        nutCongCu[cc] = b;
-    }
-
-    Button ThemNutHanhDong(string kyHieu, string goiYChu, EventHandler khiBam)
-    {
-        var b = TaoNut(kyHieu, goiYChu);
-        b.Click += khiBam;
-        return b;
-    }
-
-    void ThemKhoang() => thanh.Controls.Add(new Panel { Width = (int)(10 * tiLe), Height = 1, Margin = Padding.Empty, BackColor = NenThanh });
-
+    // ───── thanh công cụ (ThanhVe.cs) ─────
     void ChonCongCu(CongCu cc)
     {
         KetThucChu(true);
         congCu = cc;
-        foreach (var (k, b) in nutCongCu) b.BackColor = k == cc ? NenChon : NenNut;
+        thanh.CongCuChon = cc;
         Cursor = cc == CongCu.Khong ? Cursors.Cross : cc == CongCu.Chu ? Cursors.IBeam : Cursors.Cross;
-    }
-
-    void TaoMenuMau()
-    {
-        foreach (var (ten, m) in VgsChupHdr.Chu.BangMau)
-        {
-            var o = new Bitmap(16, 16);
-            using (var g = Graphics.FromImage(o)) { g.Clear(m); g.DrawRectangle(Pens.Gray, 0, 0, 15, 15); }
-            var muc = new ToolStripMenuItem(ten, o);
-            muc.Click += (_, _) => DatMau(m);
-            menuMau.Items.Add(muc);
-        }
-        menuMau.Items.Add(new ToolStripSeparator());
-        var khac = new ToolStripMenuItem(VgsChupHdr.Chu.MauKhac);
-        khac.Click += (_, _) => { using var cd = new ColorDialog { Color = mau, FullOpen = true }; if (cd.ShowDialog(this) == DialogResult.OK) DatMau(cd.Color); };
-        menuMau.Items.Add(khac);
     }
 
     void DatMau(Color m)
     {
-        mau = m; nutMau.ForeColor = m;
+        mau = m; thanh.MauChon = m;
         if (oChu != null) oChu.ForeColor = m;
     }
 
     void CapNhatThanh()
     {
         if (vung is not Rectangle v || dangChonMoi || tayCamKeo >= 0 || dangDiChuyen) { thanh.Visible = false; return; }
-        int cach = (int)(6 * tiLe);
-        int x = Math.Clamp(v.Right - thanh.Width, 0, Math.Max(0, ClientSize.Width - thanh.Width));
+        int cach = (int)(10 * tiLe);
+        int x = Math.Clamp(v.X + (v.Width - thanh.Width) / 2, 0, Math.Max(0, ClientSize.Width - thanh.Width));   // giữa, dưới vùng chọn
         int y = v.Bottom + cach;
         if (y + thanh.Height > ClientSize.Height) y = v.Top - thanh.Height - cach;
         if (y < 0) y = Math.Max(0, v.Bottom - thanh.Height - cach);
