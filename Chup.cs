@@ -120,8 +120,9 @@ public static class Chup
         using var _c = ctx!;
 
         using var o5 = output.QueryInterface<IDXGIOutput5>();
-        using var dup = o5.DuplicateOutput1(device, 0,
-            new[] { Format.R16G16B16A16_Float, Format.B8G8R8A8_UNorm });
+        // Tham số thứ 2 của Vortice là số format (không phải flags): truyền 0 → E_INVALIDARG
+        var dinhDangNhan = new[] { Format.R16G16B16A16_Float, Format.B8G8R8A8_UNorm };
+        using var dup = o5.DuplicateOutput1(device, (uint)dinhDangNhan.Length, dinhDangNhan);
 
         IDXGIResource? tai = null;
         OutduplFrameInfo frame = default;
@@ -129,7 +130,13 @@ public static class Chup
         for (int lan = 0; lan < 40 && !co; lan++)
         {
             var rr = dup.AcquireNextFrame(100, out frame, out tai);
-            if (rr.Success && tai != null) co = true;
+            if (rr.Success && tai != null)
+            {
+                // Khung đầu thường chỉ có con trỏ chuột (LastPresentTime = 0), texture còn đen → bỏ, lấy khung sau
+                if (frame.LastPresentTime != 0) { co = true; break; }
+                tai.Dispose(); tai = null;
+                dup.ReleaseFrame();
+            }
             else if (rr.Code != Vortice.DXGI.ResultCode.WaitTimeout.Code) rr.CheckError();
         }
         if (!co) throw new TimeoutException("Desktop Duplication không trả khung hình nào trong 4 giây.");
