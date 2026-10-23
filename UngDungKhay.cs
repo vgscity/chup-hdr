@@ -42,7 +42,7 @@ sealed class UngDungKhay : ApplicationContext
         {
             NhatKy.Ghi("Không đăng ký được phím PrtScn (app khác đang giữ, hoặc Windows đang gán PrtScn cho Snipping Tool)");
             string loi = SnipDangGiuPrtScn()
-                ? "Windows đang gán PrtScn cho Snipping Tool. Bấm phải vào biểu tượng → 'Trả phím PrtScn cho VGS' rồi đăng xuất/đăng nhập lại."
+                ? "Windows đang gán PrtScn cho Snipping Tool. Bấm phải vào biểu tượng → 'Trả phím PrtScn cho VGS' rồi làm theo hướng dẫn."
                 : "App khác (Lightshot, ShareX, Greenshot…) đang giữ phím PrtScn. Tắt app đó rồi mở lại VGS Chụp HDR.";
             khay.ShowBalloonTip(8000, "Chưa bắt được phím PrtScn", loi, ToolTipIcon.Warning);
         }
@@ -124,11 +124,12 @@ sealed class UngDungKhay : ApplicationContext
         mucTuLuu = new ToolStripMenuItem("Tự lưu file khi chép") { Checked = CaiDat.HienTai.TuLuuKhiChep, CheckOnClick = true };
         mucTuLuu.CheckedChanged += (_, _) => { CaiDat.HienTai.TuLuuKhiChep = mucTuLuu.Checked; CaiDat.HienTai.Luu(); };
         m.Items.Add(mucTuLuu);
-        mucTuChay = new ToolStripMenuItem("Tự chạy khi đăng nhập") { Checked = DangTuChay(), CheckOnClick = true };
-        mucTuChay.CheckedChanged += (_, _) => DatTuChay(mucTuChay.Checked);
+        mucTuChay = new ToolStripMenuItem("Tự chạy khi đăng nhập") { Checked = !GoiStore.DangTrongGoi && DangTuChay(), CheckOnClick = true };
+        mucTuChay.CheckedChanged += (_, _) => { if (!dangDatTuChay) _ = DatTuChayAsync(mucTuChay.Checked); };
         m.Items.Add(mucTuChay);
+        if (GoiStore.DangTrongGoi) _ = CapNhatTuChayTuGoiAsync();
         m.Items.Add(new ToolStripSeparator());
-        mucSuaSnip = new ToolStripMenuItem("Trả phím PrtScn cho VGS (tắt Snipping Tool)");
+        mucSuaSnip = new ToolStripMenuItem(GoiStore.DangTrongGoi ? "Trả phím PrtScn cho VGS (mở Settings)…" : "Trả phím PrtScn cho VGS (tắt Snipping Tool)");
         mucSuaSnip.Click += (_, _) => TraPhimPrtScn();
         m.Items.Add(mucSuaSnip);
         m.Items.Add("Thông tin màn hình HDR…", null, (_, _) => HienThongTinManHinh());
@@ -153,6 +154,15 @@ sealed class UngDungKhay : ApplicationContext
 
     void TraPhimPrtScn()
     {
+        if (GoiStore.DangTrongGoi)
+        {
+            Process.Start(new ProcessStartInfo("ms-settings:easeofaccess-keyboard") { UseShellExecute = true });
+            MessageBox.Show("Windows đang gán phím PrtScn cho Snipping Tool.\n\nTrong trang Settings vừa mở, tắt mục "
+                + "\"Use the Print screen key to open screen capture\" (Dùng phím Print screen để mở chụp màn hình), "
+                + "rồi đăng xuất và đăng nhập lại Windows để phím PrtScn về VGS Chụp HDR.",
+                "VGS Chụp HDR", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
         try
         {
             using var k = Registry.CurrentUser.OpenSubKey(@"Control Panel\Keyboard", writable: true);
@@ -179,6 +189,19 @@ sealed class UngDungKhay : ApplicationContext
     }
 
     // ───── tự chạy ─────
+    bool dangDatTuChay;
+    async Task CapNhatTuChayTuGoiAsync()
+    {
+        bool bat = await GoiStore.DangTuChayAsync();
+        dangDatTuChay = true; mucTuChay.Checked = bat; dangDatTuChay = false;
+    }
+    async Task DatTuChayAsync(bool bat)
+    {
+        if (!GoiStore.DangTrongGoi) { DatTuChay(bat); return; }
+        var (ketQua, lyDo) = await GoiStore.DatTuChayAsync(bat);
+        dangDatTuChay = true; mucTuChay.Checked = ketQua; dangDatTuChay = false;
+        if (lyDo != null) khay.ShowBalloonTip(6000, "Tự chạy khi đăng nhập", lyDo, ToolTipIcon.Warning);
+    }
     const string KhoaRun = @"Software\Microsoft\Windows\CurrentVersion\Run";
     static bool DangTuChay()
     {
@@ -199,6 +222,12 @@ sealed class UngDungKhay : ApplicationContext
     // ───── icon: ô vuông gradient tím–hồng, chữ V trắng ─────
     static Icon TaoIcon()
     {
+        try
+        {
+            using var luong = typeof(UngDungKhay).Assembly.GetManifestResourceStream("tray.png");
+            if (luong != null) { using var b = new Bitmap(luong); return Icon.FromHandle(b.GetHicon()); }
+        }
+        catch (Exception e) { NhatKy.Ghi("Đọc icon nhúng lỗi, vẽ tay", e); }
         using var bmp = new Bitmap(32, 32);
         using (var g = Graphics.FromImage(bmp))
         {

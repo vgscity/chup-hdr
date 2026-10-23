@@ -38,3 +38,8 @@ Nhật ký lỗi: `%AppData%\VgsChupHdr\nhat-ky.txt`. Cài đặt: `%AppData%\Vg
 - Tải ảnh lên lấy link chia sẻ (như prnt.sc) – dự định gắn với vgs.zone
 - Lưu thêm bản .jxr/.avif giữ nguyên HDR
 - Con trỏ chuột trong ảnh, màn hình xoay
+
+## Microsoft Store
+Gói MSIX dựng bằng GitHub Actions (`.github/workflows/msix.yml` → `goi/dung-goi.ps1`, manifest `goi/AppxManifest.xml`,
+logo sinh bằng `goi/logo-tao.cjs`). Các bước đăng ký, lấy identity, nộp và nội dung listing mẫu: [goi/STORE.md](goi/STORE.md).
+Trong gói, app nhận biết qua `GoiStore.DangTrongGoi`: tự chạy dùng StartupTask, việc trả phím PrtScn mở trang Settings thay vì ghi registry.

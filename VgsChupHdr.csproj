@@ -2,14 +2,15 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>VgsChupHdr</AssemblyName>
     <RootNamespace>VgsChupHdr</RootNamespace>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Product>VGS Chụp HDR</Product>
     <Company>VGS</Company>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
@@ -23,8 +24,13 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <ApplicationIcon>goi/anh/app.ico</ApplicationIcon>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />
+    <EmbeddedResource Include="goi/anh/tray-32.png" LogicalName="tray.png" />
   </ItemGroup>
 
 </Project>

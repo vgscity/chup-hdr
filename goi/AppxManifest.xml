@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Manifest gói MSIX. Ba chỗ __...__ được scripts dung-goi.ps1 thay bằng giá trị Partner Center cấp khi đặt tên app. -->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap5 desktop rescap">
+
+  <Identity Name="__IDENTITY_NAME__" Publisher="__PUBLISHER__" Version="__VERSION__" ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>VGS Chụp HDR</DisplayName>
+    <PublisherDisplayName>__PUBLISHER_DISPLAY__</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>Chụp màn hình đúng màu trên máy bật HDR. Bấm PrtScn, kéo chọn vùng, vẽ chú thích, chép hoặc lưu – như Lightshot.</Description>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22631.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="vi-VN" />
+    <Resource Language="en-US" />
+  </Resources>
+
+  <Applications>
+    <Application Id="VgsChupHdr" Executable="VgsChupHdr.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="VGS Chụp HDR"
+        Description="Chụp màn hình đúng màu trên máy bật HDR, chọn vùng và vẽ chú thích như Lightshot."
+        BackgroundColor="#1a1626"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile
+          Wide310x150Logo="Assets\Wide310x150Logo.png"
+          Square310x310Logo="Assets\Square310x310Logo.png"
+          Square71x71Logo="Assets\Square71x71Logo.png" />
+      </uap:VisualElements>
+      <Extensions>
+        <!-- Tự chạy khi đăng nhập: tắt sẵn, người dùng bật trong menu khay hoặc Settings > Apps > Startup -->
+        <desktop:Extension Category="windows.startupTask" Executable="VgsChupHdr.exe" EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="VgsChupHdrStartup" Enabled="false" DisplayName="VGS Chụp HDR" />
+        </desktop:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

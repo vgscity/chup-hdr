@@ -1,0 +1,43 @@
+# Dựng gói MSIX trên runner Windows. Chạy tay (Actions → Dựng gói MSIX → Run workflow) hoặc khi đẩy tag v*.
+# Biến repo (Settings → Secrets and variables → Actions → Variables), lấy từ Partner Center sau khi đặt tên app:
+#   STORE_IDENTITY_NAME   (Package/Identity/Name, ví dụ 12345VGS.VGSChupHDR)
+#   STORE_PUBLISHER       (Package/Identity/Publisher, dạng CN=xxxxxxxx-xxxx-...)
+#   STORE_PUBLISHER_DISPLAY (Package/Properties/PublisherDisplayName)
+# Chưa đặt thì dùng giá trị tạm – gói test vẫn cài được, gói store sẽ bị Partner Center từ chối vì sai identity.
+name: Dựng gói MSIX
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  msix:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Publish thư mục rời (self-contained, x64)
+        run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:DebugType=none -o goi/ra/app
+      - name: Dựng + ký gói
+        shell: pwsh
+        run: |
+          ./goi/dung-goi.ps1 -App goi/ra/app `
+            -IdentityName "${{ vars.STORE_IDENTITY_NAME || 'VGS.VGSChupHDR' }}" `
+            -Publisher "${{ vars.STORE_PUBLISHER || 'CN=VGS' }}" `
+            -PublisherDisplay "${{ vars.STORE_PUBLISHER_DISPLAY || 'VGS' }}"
+      - name: Exe rời (không qua Store)
+        run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o goi/ra/exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VgsChupHdr-msix
+          path: |
+            goi/ra/*.msix
+            goi/ra/*.cer
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VgsChupHdr-exe
+          path: goi/ra/exe/VgsChupHdr.exe
