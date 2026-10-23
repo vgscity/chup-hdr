@@ -11,7 +11,7 @@
   <Identity Name="__IDENTITY_NAME__" Publisher="__PUBLISHER__" Version="__VERSION__" ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>VGS Chụp HDR</DisplayName>
+    <DisplayName>VGScreenshotHDR</DisplayName>
     <PublisherDisplayName>__PUBLISHER_DISPLAY__</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
     <Description>Chụp màn hình đúng màu trên máy bật HDR. Bấm PrtScn, kéo chọn vùng, vẽ chú thích, chép hoặc lưu – như Lightshot.</Description>
@@ -29,7 +29,7 @@
   <Applications>
     <Application Id="VgsChupHdr" Executable="VgsChupHdr.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="VGS Chụp HDR"
+        DisplayName="VGScreenshotHDR"
         Description="Chụp màn hình đúng màu trên máy bật HDR, chọn vùng và vẽ chú thích như Lightshot."
         BackgroundColor="#1a1626"
         Square150x150Logo="Assets\Square150x150Logo.png"
@@ -42,7 +42,7 @@
       <Extensions>
         <!-- Tự chạy khi đăng nhập: tắt sẵn, người dùng bật trong menu khay hoặc Settings > Apps > Startup -->
         <desktop:Extension Category="windows.startupTask" Executable="VgsChupHdr.exe" EntryPoint="Windows.FullTrustApplication">
-          <desktop:StartupTask TaskId="VgsChupHdrStartup" Enabled="false" DisplayName="VGS Chụp HDR" />
+          <desktop:StartupTask TaskId="VgsChupHdrStartup" Enabled="false" DisplayName="VGScreenshotHDR" />
         </desktop:Extension>
       </Extensions>
     </Application>
