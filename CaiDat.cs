@@ -9,6 +9,37 @@ public sealed class CaiDat
         Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Screenshots");
     public bool MoFileSauKhiLuu { get; set; } = false;
 
+    // Phím tắt (Keys của WinForms: mã phím | Shift/Control/Alt), đổi được trong cửa sổ chính
+    public const Keys MacDinhChon = Keys.PrintScreen;
+    public const Keys MacDinhToan = Keys.Shift | Keys.PrintScreen;
+    public const Keys MacDinhCuaSo = Keys.Alt | Keys.PrintScreen;
+    public Keys PhimChon { get; set; } = MacDinhChon;
+    public Keys PhimToan { get; set; } = MacDinhToan;
+    public Keys PhimCuaSo { get; set; } = MacDinhCuaSo;
+
+    /// "Ctrl+Shift+A", "PrtScn"…
+    public static string TenPhim(Keys k)
+    {
+        if (k == Keys.None) return "(chưa đặt)";
+        var phan = new List<string>();
+        if (k.HasFlag(Keys.Control)) phan.Add("Ctrl");
+        if (k.HasFlag(Keys.Shift)) phan.Add("Shift");
+        if (k.HasFlag(Keys.Alt)) phan.Add("Alt");
+        var ma = k & Keys.KeyCode;
+        phan.Add(ma switch
+        {
+            Keys.PrintScreen => "PrtScn",
+            >= Keys.D0 and <= Keys.D9 => ((char)('0' + (ma - Keys.D0))).ToString(),
+            Keys.Oemtilde => "`",
+            Keys.OemMinus => "-",
+            Keys.Oemplus => "=",
+            Keys.Next => "PageDown",
+            Keys.Prior => "PageUp",
+            _ => ma.ToString(),
+        });
+        return string.Join("+", phan);
+    }
+
     static readonly string duongDan = Path.Combine(NhatKy.ThuMuc, "cai-dat.json");
     public static CaiDat HienTai { get; private set; } = Doc();
 

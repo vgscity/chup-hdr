@@ -109,7 +109,7 @@ sealed class DauMenu : ToolStripMenuItem
     readonly Image? logo = GiaoDien.Logo();
     const string MoTa = "Chụp màn hình HDR đúng màu, không cháy sáng";
 
-    public DauMenu(Action khiBam) : base("VGS Chụp HDR") { Click += (_, _) => khiBam(); }
+    public DauMenu(Action khiBam) : base("VGScreenshotHDR") { Click += (_, _) => khiBam(); }
 
     float TiLe => (Owner?.DeviceDpi ?? 96) / 96f;
 
@@ -139,8 +139,8 @@ sealed class DauMenu : ToolStripMenuItem
         using var fTen = new Font(Font.FontFamily, Font.Size * 1.15f, FontStyle.Bold);
         using var fMo = new Font(Font.FontFamily, Font.Size * 0.9f);
         int yTen = (int)(9 * k);
-        TextRenderer.DrawText(g, "VGS Chụp HDR", fTen, new Point(x, yTen), Color.White);
-        int rongTen = TextRenderer.MeasureText("VGS Chụp HDR", fTen).Width;
+        TextRenderer.DrawText(g, "VGScreenshotHDR", fTen, new Point(x, yTen), Color.White);
+        int rongTen = TextRenderer.MeasureText("VGScreenshotHDR", fTen).Width;
         TextRenderer.DrawText(g, "v" + GiaoDien.PhienBan, fMo, new Point(x + rongTen, yTen + (int)(3 * k)), GiaoDien.ChuMo);
         TextRenderer.DrawText(g, MoTa, fMo, new Point(x, yTen + fTen.Height + (int)(2 * k)), Color.FromArgb(200, 200, 200));
     }
@@ -151,85 +151,138 @@ sealed class HopGioiThieu : Form
 {
     public HopGioiThieu()
     {
-        Text = "Giới thiệu VGS Chụp HDR";
+        Text = "Giới thiệu VGScreenshotHDR";
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = MinimizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = GiaoDien.Nen;
         ForeColor = GiaoDien.Chu;
         Font = new Font("Segoe UI", 10f);
-        AutoScaleMode = AutoScaleMode.Dpi;
-        AutoScaleDimensions = new SizeF(96, 96);
-        ClientSize = new Size(460, 470);
         ShowInTaskbar = true;
         TopMost = true;
         try { Icon = Icon.ExtractAssociatedIcon(Environment.ProcessPath!); } catch { }
 
-        var dai = new Panel { Dock = DockStyle.Top, Height = 110 };
-        dai.Paint += (_, e) =>
-        {
-            var g = e.Graphics;
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            using (var nen = GiaoDien.ButGradient(dai.ClientRectangle)) g.FillRectangle(nen, dai.ClientRectangle);
-            float k = DeviceDpi / 96f;
-            using var logo = GiaoDien.Logo();
-            var oLogo = new Rectangle((int)(24 * k), (int)(27 * k), (int)(56 * k), (int)(56 * k));
-            if (logo != null) { g.InterpolationMode = InterpolationMode.HighQualityBicubic; g.DrawImage(logo, oLogo); }
-            using var fTen = new Font("Segoe UI Semibold", 17f);
-            using var fPb = new Font("Segoe UI", 9.5f);
-            int x = oLogo.Right + (int)(16 * k);
-            TextRenderer.DrawText(g, "VGS Chụp HDR", fTen, new Point(x, (int)(28 * k)), Color.White);
-            TextRenderer.DrawText(g, $"Phiên bản {GiaoDien.PhienBan} · by VGS", fPb, new Point(x, (int)(62 * k)), Color.FromArgb(235, 235, 235));
-        };
-        Controls.Add(dai);
+        // Bố cục tự co theo chữ (toạ độ cố định từng vỡ ở màn scale 150–200%): chỉ bề rộng cột chữ đặt theo DPI.
+        AutoScaleMode = AutoScaleMode.None;
+        AutoSize = true;
+        AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        float k = DeviceDpi / 96f;
+        int Px(int v) => (int)(v * k);
+        int rong = Px(440);
 
-        var noiDung = new Label
+        var khung = new TableLayoutPanel
         {
-            AutoSize = false,
-            Location = new Point(24, 126),
-            Size = new Size(412, 230),
-            ForeColor = GiaoDien.Chu,
-            Text =
-                "Bật HDR thì nút PrtScn của Windows chụp ra ảnh bạc màu, cháy sáng. "
-                + "VGS Chụp HDR đọc thẳng dữ liệu HDR của màn hình rồi chuyển về đúng màu mắt bạn thấy.\n\n"
-                + "PrtScn\t\tChọn vùng, vẽ chú thích, chép / lưu\n"
-                + "Shift+PrtScn\tChụp toàn màn hình\n"
-                + "Alt+PrtScn\tChụp cửa sổ đang mở\n\n"
-                + "Trong khung chọn: P bút · L đường · A mũi tên · R khung · M đánh dấu · T chữ · Ctrl+Z hoàn tác.",
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            ColumnCount = 1, Padding = Padding.Empty, Margin = Padding.Empty,
         };
-        Controls.Add(noiDung);
+        Controls.Add(khung);
+
+        // ── dải đầu gradient: logo + tên + phiên bản
+        var dai = new DaiGradient { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty, Padding = new Padding(Px(24), Px(22), Px(24), Px(22)), MinimumSize = new Size(rong, 0) };
+        var hangDau = new FlowLayoutPanel { AutoSize = true, BackColor = Color.Transparent, Margin = Padding.Empty, WrapContents = false };
+        var logo = new PictureBox { Image = GiaoDien.Logo(), SizeMode = PictureBoxSizeMode.Zoom, Size = new Size(Px(56), Px(56)), Margin = new Padding(0, 0, Px(16), 0), BackColor = Color.Transparent };
+        var cotTen = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, BackColor = Color.Transparent, Margin = Padding.Empty, WrapContents = false };
+        cotTen.Controls.Add(Nhan("VGScreenshotHDR", new Font("Segoe UI Semibold", 17f), Color.White, 0));
+        cotTen.Controls.Add(Nhan($"Phiên bản {GiaoDien.PhienBan} · by VGS", new Font("Segoe UI", 9.5f), Color.FromArgb(240, 240, 240), 0));
+        hangDau.Controls.Add(logo);
+        hangDau.Controls.Add(cotTen);
+        dai.Controls.Add(hangDau);
+        khung.Controls.Add(dai);
+
+        // ── nội dung
+        var than = new TableLayoutPanel
+        {
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1,
+            Padding = new Padding(Px(24), Px(18), Px(24), Px(20)), Margin = Padding.Empty,
+        };
+        than.Controls.Add(Nhan("Bật HDR thì nút PrtScn của Windows chụp ra ảnh bạc màu, cháy sáng. "
+            + "VGScreenshotHDR đọc thẳng dữ liệu HDR của màn hình rồi chuyển về đúng màu mắt bạn thấy.", Font, GiaoDien.Chu, rong - Px(48)));
+
+        var bangPhim = new TableLayoutPanel { AutoSize = true, ColumnCount = 2, Margin = new Padding(0, Px(14), 0, Px(4)) };
+        foreach (var (phim, viec) in new[]
+        {
+            ("PrtScn", "Chọn vùng, vẽ chú thích, chép / lưu"),
+            ("Shift+PrtScn", "Chụp toàn màn hình"),
+            ("Alt+PrtScn", "Chụp cửa sổ đang mở"),
+        })
+        {
+            var nhanPhim = Nhan(phim, new Font("Segoe UI Semibold", 10f), GiaoDien.Hong, 0);
+            nhanPhim.Margin = new Padding(0, Px(2), Px(16), Px(2));
+            var nhanViec = Nhan(viec, Font, GiaoDien.Chu, 0);
+            nhanViec.Margin = new Padding(0, Px(2), 0, Px(2));
+            bangPhim.Controls.Add(nhanPhim);
+            bangPhim.Controls.Add(nhanViec);
+        }
+        than.Controls.Add(bangPhim);
+        var nhanCongCu = Nhan("Trong khung chọn: P bút · L đường · A mũi tên · R khung · M đánh dấu · T chữ · Ctrl+Z hoàn tác",
+            new Font("Segoe UI", 9f), GiaoDien.ChuMo, rong - Px(48));
+        nhanCongCu.Margin = new Padding(0, Px(6), 0, Px(14));
+        than.Controls.Add(nhanCongCu);
 
         var lienKet = new LinkLabel
         {
             AutoSize = true,
-            Location = new Point(24, 370),
+            MaximumSize = new Size(rong - Px(48), 0),
+            UseMnemonic = false,   // không thì "&" bị nuốt thành phím tắt
             Text = "Thêm tiện ích miễn phí cho game thủ & dân văn phòng tại vgs.zone",
+            ForeColor = GiaoDien.Chu,
             LinkColor = GiaoDien.Hong,
             ActiveLinkColor = Color.White,
             VisitedLinkColor = GiaoDien.Hong,
+            Margin = new Padding(0, 0, 0, Px(16)),
         };
         lienKet.LinkArea = new LinkArea(lienKet.Text.IndexOf("vgs.zone", StringComparison.Ordinal), "vgs.zone".Length);
         lienKet.LinkClicked += (_, _) => GiaoDien.MoTrangVgs();
-        Controls.Add(lienKet);
+        than.Controls.Add(lienKet);
 
-        var nutVgs = TaoNut("Mở vgs.zone", true);
-        nutVgs.Location = new Point(24, 412);
+        var hangNut = new TableLayoutPanel { AutoSize = true, ColumnCount = 3, Margin = Padding.Empty, MinimumSize = new Size(rong - Px(48), 0) };
+        hangNut.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        hangNut.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        hangNut.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        var nutVgs = TaoNut("Mở vgs.zone", true, k);
         nutVgs.Click += (_, _) => GiaoDien.MoTrangVgs();
-        Controls.Add(nutVgs);
-
-        var nutDong = TaoNut("Đóng", false);
-        nutDong.Location = new Point(436 - nutDong.Width, 412);
+        var nutDong = TaoNut("Đóng", false, k);
         nutDong.Click += (_, _) => Close();
-        Controls.Add(nutDong);
+        hangNut.Controls.Add(nutVgs, 0, 0);
+        hangNut.Controls.Add(nutDong, 2, 0);
+        than.Controls.Add(hangNut);
+        khung.Controls.Add(than);
         CancelButton = nutDong;
     }
 
-    static Button TaoNut(string chu, bool chinh)
+    static Label Nhan(string chu, Font font, Color mau, int rongToiDa) => new()
+    {
+        Text = chu,
+        Font = font,
+        ForeColor = mau,
+        BackColor = Color.Transparent,
+        AutoSize = true,
+        UseMnemonic = false,
+        MaximumSize = new Size(rongToiDa, 0),
+        Margin = Padding.Empty,
+    };
+
+    /// Panel tô nền gradient tím–hồng để nhãn trong suốt bên trên thấy được nền (FlowLayoutPanel để Padding có tác dụng)
+    internal sealed class DaiGradient : FlowLayoutPanel
+    {
+        public DaiGradient() { DoubleBuffered = true; ResizeRedraw = true; }
+        protected override void OnPaintBackground(PaintEventArgs e)
+        {
+            if (ClientRectangle.Width <= 0 || ClientRectangle.Height <= 0) return;
+            using var nen = GiaoDien.ButGradient(ClientRectangle);
+            e.Graphics.FillRectangle(nen, ClientRectangle);
+        }
+    }
+
+    static Button TaoNut(string chu, bool chinh, float k)
     {
         var b = new Button
         {
             Text = chu,
-            Size = new Size(chinh ? 150 : 100, 36),
+            AutoSize = true,
+            MinimumSize = new Size((int)((chinh ? 150 : 100) * k), (int)(38 * k)),
+            Padding = new Padding((int)(10 * k), 0, (int)(10 * k), 0),
+            Margin = Padding.Empty,
             FlatStyle = FlatStyle.Flat,
             BackColor = chinh ? GiaoDien.Tim : Color.FromArgb(45, 45, 45),
             ForeColor = Color.White,

@@ -10,8 +10,8 @@ static class Program
         using var mutex = new Mutex(true, "VgsChupHdr-mot-ban", out bool moi);
         if (!moi)
         {
-            MessageBox.Show("VGS Chụp HDR đang chạy rồi, xem ở khay hệ thống (góc dưới phải).",
-                "VGS Chụp HDR", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("VGScreenshotHDR đang chạy rồi, xem ở khay hệ thống (góc dưới phải).",
+                "VGScreenshotHDR", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
 

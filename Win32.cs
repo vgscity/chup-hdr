@@ -83,13 +83,13 @@ sealed class HookBanPhim : IDisposable
 
     readonly HookProc proc;   // giữ tham chiếu, không để GC thu delegate
     readonly IntPtr hook;
-    readonly Func<uint, int?> timHotkey;
+    readonly Func<uint, uint, int?> timHotkey;
     readonly Action<int> khiBam;
     readonly SynchronizationContext ngu;
-    bool dangGiu;
+    uint phimDangGiu;   // chặn lặp khi giữ phím
 
-    /// timHotkey: nhận tổ hợp phím bổ trợ (MOD_*) → id hotkey cần xử lý, hoặc null nếu bỏ qua.
-    public HookBanPhim(Func<uint, int?> timHotkey, Action<int> khiBam)
+    /// timHotkey: nhận (mã phím, tổ hợp phím bổ trợ MOD_*) → id hotkey cần xử lý, hoặc null nếu bỏ qua.
+    public HookBanPhim(Func<uint, uint, int?> timHotkey, Action<int> khiBam)
     {
         this.timHotkey = timHotkey;
         this.khiBam = khiBam;
@@ -107,19 +107,16 @@ sealed class HookBanPhim : IDisposable
         if (code >= 0)
         {
             var k = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam);
-            if (k.vkCode == Win32.VK_SNAPSHOT)
+            int msg = (int)wParam;
+            if (msg is WM_KEYUP or WM_SYSKEYUP) { if (k.vkCode == phimDangGiu) phimDangGiu = 0; }
+            else if (msg is WM_KEYDOWN or WM_SYSKEYDOWN)
             {
-                int msg = (int)wParam;
-                if (msg is WM_KEYUP or WM_SYSKEYUP) dangGiu = false;
-                else if (msg is WM_KEYDOWN or WM_SYSKEYDOWN)
+                uint mod = (Giu(VK_MENU) ? Win32.MOD_ALT : 0) | (Giu(VK_SHIFT) ? Win32.MOD_SHIFT : 0) | (Giu(VK_CONTROL) ? Win32.MOD_CONTROL : 0);
+                if (timHotkey(k.vkCode, mod) is int id)
                 {
-                    uint mod = (Giu(VK_MENU) ? Win32.MOD_ALT : 0) | (Giu(VK_SHIFT) ? Win32.MOD_SHIFT : 0) | (Giu(VK_CONTROL) ? Win32.MOD_CONTROL : 0);
-                    if (timHotkey(mod) is int id)
-                    {
-                        if (!dangGiu) ngu.Post(_ => khiBam(id), null);   // không làm việc nặng trong hook
-                        dangGiu = true;
-                        return 1;   // nuốt phím để app đang giữ tổ hợp không chụp chồng
-                    }
+                    if (phimDangGiu != k.vkCode) ngu.Post(_ => khiBam(id), null);   // không làm việc nặng trong hook
+                    phimDangGiu = k.vkCode;
+                    return 1;   // nuốt phím để app đang giữ tổ hợp không chụp chồng
                 }
             }
         }

@@ -1,4 +1,4 @@
-# VGS Chụp HDR
+# VGScreenshotHDR
 
 Tool chụp màn hình Windows cho máy bật HDR: ảnh chụp ra đúng màu như mắt thấy, không cháy sáng.
 Giao diện kiểu Lightshot: bấm PrtScn → màn hình đứng lại → kéo chọn vùng → vẽ chú thích → chép / lưu.
