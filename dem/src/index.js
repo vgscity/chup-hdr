@@ -1,5 +1,5 @@
 // Bộ đếm tải ẩn danh cho file VGS trên R2 (23/10/2026, theo mẫu cleantv-dem). Không lưu IP: lượt tải ghi băm IP+ngày+muối
-// để đếm người tải khác nhau trong ngày. Đường: /tai/<app>?tu=<nguồn> (đếm rồi chuyển sang file), /file/<app>/<bản>/<tên>
+// (muối là secret MUOI của Worker, không nằm trong mã) để đếm người tải khác nhau trong ngày. Đường: /tai/<app>?tu=<nguồn> (đếm rồi chuyển sang file), /file/<app>/<bản>/<tên>
 // (phát file từ R2), /so-lieu?app=<app>&ngay=N (JSON cho admin vgs.zone, khoá qua header x-khoa).
 const APP = {
   "chup-hdr": {
@@ -62,8 +62,9 @@ export default {
       const app = phan[1], cau = APP[app], ban = cau.ban(env);
       const ip = req.headers.get("cf-connecting-ip") || "";
       const ngay = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
-      const may = await bam(`${ip}|${ngay}|${env.MUOI || "vgs"}`);
-      if (req.method === "GET") ctx.waitUntil(ghi(env, { app, may, ban, them: cat(url.searchParams.get("tu"), 40), quoc_gia: req.cf?.country || "" }).catch(() => {}));
+      const may = await bam(`${ip}|${ngay}|${env.MUOI}`);
+      // Không có muối (secret MUOI chưa đặt) thì không ghi: băm thiếu muối dò ngược ra IP được.
+      if (req.method === "GET" && env.MUOI) ctx.waitUntil(ghi(env, { app, may, ban, them: cat(url.searchParams.get("tu"), 40), quoc_gia: req.cf?.country || "" }).catch(() => {}));
       return Response.redirect(new URL(`/file/${app}/${ban}/${cau.tenFile(ban)}`, url).toString(), 302);
     }
 

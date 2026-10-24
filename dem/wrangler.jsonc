@@ -1,0 +1,12 @@
+{
+  // Bộ đếm lượt tải các file VGS trên R2 (bucket vgs-tai) — VGScreenshotHDR trước, app khác thêm vào APP trong src/index.js.
+  // Deploy: cd dem && npx wrangler deploy (cần CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID).
+  // Secret của Worker (wrangler secret put): XEM_KHOA (khoá đọc /so-lieu), MUOI (muối băm IP+ngày — không để trong file).
+  // Bản mới: đổi BAN_CHUP_HDR rồi deploy lại (file phải có sẵn trên R2: chup-hdr/<bản>/VGScreenshotHDR-<bản>.exe).
+  "name": "vgs-tai-dem",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "vars": { "BAN_CHUP_HDR": "1.0.0" },
+  "d1_databases": [{ "binding": "DB", "database_name": "vgs-tai-dem", "database_id": "f7854eed-a672-44e6-b017-12e511a25c7a" }],
+  "r2_buckets": [{ "binding": "TAI", "bucket_name": "vgs-tai" }]
+}
