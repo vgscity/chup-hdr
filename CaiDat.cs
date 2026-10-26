@@ -18,6 +18,16 @@ public sealed class CaiDat
     public Keys PhimToan { get; set; } = MacDinhToan;
     public Keys PhimCuaSo { get; set; } = MacDinhCuaSo;
 
+    // Quay màn hình (v1, 26/10/2026): Ctrl+PrtScn bật/tắt; MP4 H.264 vào Videos\VGScreenshotHDR
+    public const Keys MacDinhQuay = Keys.Control | Keys.PrintScreen;
+    public Keys PhimQuay { get; set; } = MacDinhQuay;
+    public int QuayFps { get; set; } = 60;            // 30 | 60
+    public int QuayChatLuong { get; set; } = 1;       // 0 thấp · 1 vừa · 2 cao
+    public bool QuayTiengHeThong { get; set; } = true;
+    public bool QuayConTro { get; set; } = true;
+    public string ThuMucQuay { get; set; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "VGScreenshotHDR");
+
     /// "Ctrl+Shift+A", "PrtScn"…
     public static string TenPhim(Keys k)
     {

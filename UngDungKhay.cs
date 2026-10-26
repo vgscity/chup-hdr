@@ -9,7 +9,7 @@ namespace VgsChupHdr;
 /// Ứng dụng chạy ở khay hệ thống: nhận hotkey, mở khung chọn, menu cài đặt.
 sealed class UngDungKhay : ApplicationContext
 {
-    const int HK_CHON = 1, HK_TOAN = 2, HK_CUA_SO = 3;
+    const int HK_CHON = 1, HK_TOAN = 2, HK_CUA_SO = 3, HK_QUAY = 4;
     readonly NotifyIcon khay;
     readonly CuaSoHotkey cuaSo;
     KhungChon? khungDangMo;
@@ -53,12 +53,13 @@ sealed class UngDungKhay : ApplicationContext
     // ───── hotkey ─────
     public enum TrangThaiPhim { ChuaDat, DangKy, HookDuPhong, Loi }
     public readonly Dictionary<int, TrangThaiPhim> TrangThai = new();
-    public static readonly int[] CacHotkey = { HK_CHON, HK_TOAN, HK_CUA_SO };
+    public static readonly int[] CacHotkey = { HK_CHON, HK_TOAN, HK_CUA_SO, HK_QUAY };
 
     public static Keys PhimCua(int id) => id switch
     {
         HK_CHON => CaiDat.HienTai.PhimChon,
         HK_TOAN => CaiDat.HienTai.PhimToan,
+        HK_QUAY => CaiDat.HienTai.PhimQuay,
         _ => CaiDat.HienTai.PhimCuaSo,
     };
 
@@ -120,6 +121,7 @@ sealed class UngDungKhay : ApplicationContext
                 case HK_CHON: MoKhungChon(); break;
                 case HK_TOAN: ChupNhanh(toanBo: true); break;
                 case HK_CUA_SO: ChupNhanh(toanBo: false); break;
+                case HK_QUAY: _ = BatTatQuayAsync(); break;
             }
         }
         catch (Exception e)
@@ -127,6 +129,50 @@ sealed class UngDungKhay : ApplicationContext
             NhatKy.Ghi("Xử lý hotkey lỗi", e);
             khay.ShowBalloonTip(5000, Chu.ChupLoi, e.Message, ToolTipIcon.Error);
         }
+    }
+
+    // ───── quay màn hình (v1: toàn màn hình dưới con trỏ; chọn vùng nối vào KhungChon ở bước sau) ─────
+    Quay.ThanhQuay? thanhQuay;
+    async Task BatTatQuayAsync()
+    {
+        if (Quay.BoQuay.DangChay is { } dang) { await dang.DungAsync(); return; }
+        try
+        {
+            var hmon = Quay.D3DInterop.MonitorFromPoint(Cursor.Position, Quay.D3DInterop.MONITOR_DEFAULTTONEAREST);
+            var vung = Quay.BoQuay.VungManHinh(hmon);
+            var cd = CaiDat.HienTai;
+            var q = await Quay.BoQuay.BatDauAsync(vung, cd.QuayFps, cd.QuayChatLuong, cd.QuayTiengHeThong, cd.QuayConTro);
+            q.DaDung += (file, loi) => BeginInvokeKhay(() =>
+            {
+                thanhQuay?.Close(); thanhQuay = null;
+                if (loi != null || file == null) khay.ShowBalloonTip(6000, Chu.QuayLoi, loi?.Message ?? "?", ToolTipIcon.Error);
+                else khay.ShowBalloonTip(4000, Chu.TenApp, Chu.QuayXong(Path.GetFileName(file)), ToolTipIcon.Info);
+                CapNhatMenuQuay();
+            });
+            thanhQuay = new Quay.ThanhQuay(q, vung, () => _ = q.DungAsync());
+            thanhQuay.Show();
+            khay.ShowBalloonTip(2500, Chu.TenApp, Chu.QuayBatDau(CaiDat.TenPhim(cd.PhimQuay)), ToolTipIcon.Info);
+            CapNhatMenuQuay();
+        }
+        catch (Exception e)
+        {
+            NhatKy.Ghi("Bắt đầu quay lỗi", e);
+            khay.ShowBalloonTip(6000, Chu.QuayLoi, e.Message, ToolTipIcon.Error);
+        }
+    }
+
+    void BeginInvokeKhay(Action a)
+    {
+        if (cuaSo.Handle == IntPtr.Zero) { a(); return; }
+        System.Windows.Forms.Control.FromHandle(cuaSo.Handle)?.BeginInvoke(a);
+        if (System.Windows.Forms.Control.FromHandle(cuaSo.Handle) == null) a();
+    }
+
+    ToolStripMenuItem? mucQuay;
+    void CapNhatMenuQuay()
+    {
+        if (mucQuay == null) return;
+        mucQuay.Text = Quay.BoQuay.DangChay != null ? Chu.DungQuay + " · " + Chu.DangQuay : Chu.QuayManHinh;
     }
 
     static bool SnipDangGiuPrtScn()
@@ -184,7 +230,9 @@ sealed class UngDungKhay : ApplicationContext
         mucChon = VeMenuToi.Gan(new ToolStripMenuItem(Chu.ChupChonVung, null, (_, _) => XuLyHotkey(HK_CHON)) { Font = new Font("Segoe UI Semibold", m.Font.Size) }, "", CaiDat.HienTai.PhimChon);
         mucToan = VeMenuToi.Gan(new ToolStripMenuItem(Chu.ChupToanMan, null, (_, _) => XuLyHotkey(HK_TOAN)), "", CaiDat.HienTai.PhimToan);
         mucCuaSo = VeMenuToi.Gan(new ToolStripMenuItem(Chu.ChupCuaSo, null, (_, _) => XuLyHotkey(HK_CUA_SO)), "", CaiDat.HienTai.PhimCuaSo);
-        m.Items.AddRange(new ToolStripItem[] { mucChon, mucToan, mucCuaSo });
+        mucQuay = VeMenuToi.Gan(new ToolStripMenuItem(Chu.QuayManHinh, null, (_, _) => XuLyHotkey(HK_QUAY)), "", CaiDat.HienTai.PhimQuay);
+        CapNhatMenuQuay();
+        m.Items.AddRange(new ToolStripItem[] { mucChon, mucToan, mucCuaSo, mucQuay });
         m.Items.Add(new ToolStripSeparator());
         m.Items.Add(VeMenuToi.Gan(new ToolStripMenuItem(Chu.MoCaiDat, null, (_, _) => MoCuaSoChinh()) { ShortcutKeyDisplayString = Chu.NhapDupIcon }, ""));
         m.Items.Add(VeMenuToi.Gan(new ToolStripMenuItem(Chu.MoThuMucAnh, null, (_, _) => MoThuMuc()), ""));

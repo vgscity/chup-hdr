@@ -62,6 +62,14 @@ static class Chu
     public static string DangChayRoi => T("VGScreenshotHDR đang chạy rồi, xem ở khay hệ thống (góc dưới phải).",
                                           "VGScreenshotHDR is already running. Look for it in the system tray (bottom right).");
 
+    // ── quay màn hình
+    public static string QuayManHinh => T("Quay màn hình", "Record screen");
+    public static string DungQuay => T("Dừng", "Stop");
+    public static string DangQuay => T("Đang quay…", "Recording…");
+    public static string QuayXong(string file) => T("Đã lưu video ", "Video saved ") + file;
+    public static string QuayLoi => T("Quay lỗi", "Recording failed");
+    public static string QuayBatDau(string phim) => T($"Bắt đầu quay — bấm {phim} hoặc nút Dừng để kết thúc", $"Recording started — press {phim} or Stop to finish");
+
     // ── 3 kiểu chụp
     public static string ChupChonVung => T("Chụp chọn vùng", "Capture region");
     public static string ChupToanMan => T("Chụp toàn màn hình", "Capture full screen");

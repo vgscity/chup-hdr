@@ -28,6 +28,9 @@ Máy không bật HDR vẫn chụp bình thường.
 Đổi phím, thư mục lưu, ngôn ngữ (Việt / English) trong cửa sổ chính (nhấp đúp icon ở khay).
 Không bắt được `PrtScn`? Windows đang gán phím đó cho Snipping Tool (Settings › Accessibility › Keyboard) hoặc Lightshot / ShareX đang chạy.
 
+## Quay màn hình (đang làm)
+Bản 1.1 sẽ có quay màn hình MP4 H.264 60 fps, tone-map HDR từng khung trên GPU, tiếng hệ thống — xem `docs/QUAY-MAN-HINH.md`.
+
 ## Build
 Cần .NET 8 SDK. Build được cả trên Windows lẫn macOS/Linux (cross-build, `EnableWindowsTargeting`), chạy chỉ trên Windows 10 1809+ / 11, x64.
 ```bash
