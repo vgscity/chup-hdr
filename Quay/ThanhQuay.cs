@@ -55,6 +55,18 @@ sealed class ThanhQuay : Form
         e.Graphics.FillEllipse(b, 12 * tiLe, (Height - d) / 2, d, d);
     }
 
+    [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool SetWindowDisplayAffinity(IntPtr hWnd, uint affinity);
+    const uint WDA_EXCLUDEFROMCAPTURE = 0x11;   // Windows 10 2004+: hiện trên màn, không có trong khung quay / ảnh chụp
+
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        // Quay toàn màn hình thì không có chỗ "ngoài vùng" để đặt thanh → thanh từng lọt vào video
+        // (thử trên Windows 27/10/2026: đồng hồ + nút Stop ở giữa đáy video). Loại hẳn khỏi bản quay.
+        if (!SetWindowDisplayAffinity(Handle, WDA_EXCLUDEFROMCAPTURE))
+            NhatKy.Ghi("SetWindowDisplayAffinity(EXCLUDEFROMCAPTURE) không được (Windows cũ hơn 2004?), thanh quay có thể lọt vào video");
+    }
+
     protected override bool ShowWithoutActivation => true;
     protected override CreateParams CreateParams
     {

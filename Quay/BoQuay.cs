@@ -22,6 +22,9 @@ sealed class BoQuay : IDisposable
     readonly object khoa = new();
     TimeSpan khungCuoi = TimeSpan.MinValue, buocKhung;
     bool dangDung;
+    // Thống kê từng khâu, ghi nhật ký khi dừng (thử Windows 27/10/2026: video 4K chỉ ~36 fps mà nhật ký không báo rớt,
+    // vì khung bỏ do bể texture đầy không được đếm)
+    int demNhan, demBoFps, demRotBe, demGui;
 
     public string DuongDan { get; private set; } = "";
     public TimeSpan ThoiLuong => dongHo.Elapsed;
@@ -78,7 +81,7 @@ sealed class BoQuay : IDisposable
                 catch (Exception e) { NhatKy.Ghi("Không mở được loopback âm thanh, quay không tiếng", e); q.am = null; }
             }
             q.buocKhung = TimeSpan.FromSeconds(1.0 / fps);
-            q.maHoa = new MaHoaVideo(q.toneMap.Rong, q.toneMap.Cao, fps, Bitrate(chatLuong, q.toneMap.Rong, q.toneMap.Cao, fps), q.am?.DinhDang);
+            q.maHoa = new MaHoaVideo(q.toneMap.Rong, q.toneMap.Cao, fps, Bitrate(chatLuong, q.toneMap.Rong, q.toneMap.Cao, fps), q.am?.DinhDang, () => q.dongHo.Elapsed);
 
             var thuMuc = CaiDat.HienTai.ThuMucQuay;
             Directory.CreateDirectory(thuMuc);
@@ -137,13 +140,15 @@ sealed class BoQuay : IDisposable
         lock (khoa)
         {
             if (dangDung) return;
+            demNhan++;
             var luc = dongHo.Elapsed;
-            if (khungCuoi != TimeSpan.MinValue && luc - khungCuoi < buocKhung * 0.9) return;   // màn 144 Hz chỉ lấy đủ fps đích
+            if (khungCuoi != TimeSpan.MinValue && luc - khungCuoi < buocKhung * 0.9) { demBoFps++; return; }   // màn 144 Hz chỉ lấy đủ fps đích
             khungCuoi = luc;
             var o = toneMap.Lay();
-            if (o == null) return;   // encoder chậm, bể đầy → rớt khung
+            if (o == null) { demRotBe++; return; }   // encoder chậm, bể đầy → rớt khung
             toneMap.Ve(tex, o);
             ctx.Flush();
+            demGui++;
             maHoa.ThemKhung(o.Surface, luc, () => toneMap.Tra(o));
         }
     }
@@ -158,7 +163,9 @@ sealed class BoQuay : IDisposable
             am?.Dung();
             maHoa.KetThuc();
             await chayMaHoa;
-            if (maHoa.KhungRot > 0) NhatKy.Ghi($"Quay xong, rớt {maHoa.KhungRot} khung (encoder không kịp)");
+            double giay = Math.Max(0.001, dongHo.Elapsed.TotalSeconds);
+            NhatKy.Ghi($"Quay xong {giay:0.0}s: nhận {demNhan} khung ({demNhan / giay:0.0}/s), bỏ do lọc fps {demBoFps}, " +
+                       $"rớt do bể đầy {demRotBe}, rớt do hàng đợi đầy {maHoa.KhungRot}, gửi encoder {demGui} ({demGui / giay:0.0}/s)");
         }
         catch (Exception e) { loi = e; NhatKy.Ghi("Dừng quay lỗi", e); }
         finally

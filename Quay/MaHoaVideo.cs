@@ -23,12 +23,14 @@ sealed class MaHoaVideo
     readonly BlockingCollection<KhungVideo> video = new(new ConcurrentQueue<KhungVideo>(), 12);
     readonly BlockingCollection<KhungAm> am = new(new ConcurrentQueue<KhungAm>());
     readonly uint amRate, amKenh;
+    readonly Func<TimeSpan> bayGio;   // đồng hồ chung của bộ quay
     TimeSpan amCuoi;
     public int KhungRot { get; private set; }
     public string? LoiMss { get; private set; }
 
-    public MaHoaVideo(int rong, int cao, int fps, uint bitrate, AudioEncodingProperties? pcm)
+    public MaHoaVideo(int rong, int cao, int fps, uint bitrate, AudioEncodingProperties? pcm, Func<TimeSpan> bayGio)
     {
+        this.bayGio = bayGio;
         var vp = VideoEncodingProperties.CreateUncompressed(MediaEncodingSubtypes.Bgra8, (uint)rong, (uint)cao);
         vp.FrameRate.Numerator = (uint)fps; vp.FrameRate.Denominator = 1;
         moTaVideo = new VideoStreamDescriptor(vp);
@@ -114,17 +116,25 @@ sealed class MaHoaVideo
     {
         while (true)
         {
-            if (am.TryTake(out var k, 40))
+            if (am.TryTake(out var k, 10))
             {
-                var mau = MediaStreamSample.CreateFromBuffer(k.Pcm.AsBuffer(), k.Luc);
+                // Mốc tăng dần: khối thật tới ngay sau đoạn im lặng vừa chèn có thể lệch lùi vài ms
+                var luc = k.Luc < amCuoi ? amCuoi : k.Luc;
+                var mau = MediaStreamSample.CreateFromBuffer(k.Pcm.AsBuffer(), luc);
                 mau.Duration = k.Dai;
-                amCuoi = k.Luc + k.Dai;
+                amCuoi = luc + k.Dai;
                 return mau;
             }
             if (am.IsCompleted) return null;
-            // WASAPI loopback im lặng là không có dữ liệu → tự chèn 20 ms im lặng để dòng thời gian không đứt
-            var dai = TimeSpan.FromMilliseconds(20);
-            var im = new byte[(int)(amRate * amKenh * 2 * dai.TotalSeconds)];
+            // WASAPI loopback im lặng là không có dữ liệu → tự chèn im lặng để dòng thời gian không đứt.
+            // Chèn ĐỦ tới đồng hồ thật: trước đây cứ chờ 40 ms mới chèn 20 ms nên dòng âm chạy nửa tốc độ, encoder xếp theo
+            // mốc thời gian nên kéo luôn video xuống ~36–42 fps (thử Windows 27/10/2026, 4K: bỏ tiếng thì đủ 59,5 fps).
+            var thieu = bayGio() - amCuoi;
+            if (thieu < TimeSpan.FromMilliseconds(10)) continue;   // âm đã đuổi kịp đồng hồ: chờ dữ liệu thật
+            var dai = thieu > TimeSpan.FromMilliseconds(100) ? TimeSpan.FromMilliseconds(100) : thieu;
+            int soMau = (int)(amRate * dai.TotalSeconds);
+            var im = new byte[soMau * amKenh * 2];
+            dai = TimeSpan.FromSeconds((double)soMau / amRate);
             var mauIm = MediaStreamSample.CreateFromBuffer(im.AsBuffer(), amCuoi);
             mauIm.Duration = dai;
             amCuoi += dai;
