@@ -142,7 +142,9 @@ sealed class BoQuay : IDisposable
             if (dangDung) return;
             demNhan++;
             var luc = dongHo.Elapsed;
-            if (khungCuoi != TimeSpan.MinValue && luc - khungCuoi < buocKhung * 0.9) { demBoFps++; return; }   // màn 144 Hz chỉ lấy đủ fps đích
+            // màn 144 Hz chỉ lấy đủ fps đích. Ngưỡng 0,75 chu kỳ (không phải 0,9): màn 60 Hz khung tới lệch vài ms,
+            // ngưỡng 0,9 bỏ oan ~5% khung (đo HDR 27/10/2026: 26/476 khung)
+            if (khungCuoi != TimeSpan.MinValue && luc - khungCuoi < buocKhung * 0.75) { demBoFps++; return; }
             khungCuoi = luc;
             var o = toneMap.Lay();
             if (o == null) { demRotBe++; return; }   // encoder chậm, bể đầy → rớt khung

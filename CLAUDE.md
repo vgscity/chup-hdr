@@ -22,7 +22,8 @@ Việc còn lại cho phiên Windows, theo thứ tự:
    Đã sửa: (a) tiếng im lặng chèn nửa tốc độ thật → encoder kéo video xuống ~36–42 fps, giờ đủ ~58–60 fps;
    (b) thanh quay lọt vào video khi quay toàn màn → `SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)`;
    (c) nhật ký "Quay xong …" luôn ghi thống kê từng khâu (nhận / lọc fps / rớt do bể / rớt do hàng đợi / gửi encoder).
-   Còn: đo lại fps với màn đang BẬT HDR sau bản sửa (a) — lúc đo màn đã chuyển sang SDR; kích thước lẻ chưa thử.
+   (d) đo HDR 4K60 có tiếng: 55–58 fps → nới ngưỡng lọc fps 0,9→0,75 chu kỳ + bể texture 6→8: 59,97 / 59,05 / 58,31 fps.
+   Còn: kích thước lẻ (chỉ có khi quay theo vùng chọn, việc 2) chưa thử.
 2. Nối chọn vùng: KhungChon thêm chế độ quay (Ctrl+PrtScn mở khung, Enter = bắt đầu quay vùng đã chọn thay vì chép);
    cửa sổ đang mở = `D3DInterop.ItemCuaSo(hwnd)` (BoQuay hiện chỉ nhận vùng trên một màn).
 3. Trang **Quay** trong cửa sổ chính (CuaSoChinh): fps 30/60, chất lượng 0/1/2, tiếng hệ thống, con trỏ, thư mục, phím (CaiDat.Quay*).

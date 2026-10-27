@@ -55,7 +55,8 @@ float4 PSThu(VSOut i) : SV_Target { return float4(nguon.Sample(lay, i.uv).rgb * 
     readonly ID3D11RenderTargetView thuNhoRtv;
     ThamSo ts;
     int demKhung;
-    const int ThuW = 96, ThuH = 54, BeToiDa = 6;
+    // 8 khung 4K BGRA ≈ 265 MB VRAM; 6 thì HDR 4K60 còn rớt 7–10 khung / 8 giây vì encoder giữ texture tới khi xử lý xong
+    const int ThuW = 96, ThuH = 54, BeToiDa = 8;
 
     public int Rong { get; }
     public int Cao { get; }
